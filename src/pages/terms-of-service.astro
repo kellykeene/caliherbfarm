@@ -1,0 +1,84 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import { SITE } from '@/lib/constants';
+---
+
+<BaseLayout title="Terms of Service" description="Terms of service for Cali Herb Farm.">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumbs items={[{ label: 'Terms of Service', href: '/terms-of-service' }]} />
+  </div>
+
+  <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-forest-900 mb-8">
+      Terms of Service
+    </h1>
+
+    <div class="space-y-6 text-forest-900/80 leading-relaxed">
+      <p>
+        <strong>Last updated:</strong> April 2026
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Overview
+      </h2>
+      <p>
+        By accessing and using the {SITE.name} website, you agree to these
+        terms of service. Please read them carefully before making a purchase.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Products
+      </h2>
+      <p>
+        Our herbal products are made from plants grown on our farm and are
+        intended for general wellness purposes. They are not intended to
+        diagnose, treat, cure, or prevent any disease. Please consult a
+        qualified healthcare provider before using herbal products, especially
+        if you are pregnant, nursing, or taking medications.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Orders &amp; Shipping
+      </h2>
+      <ul class="list-disc pl-6 space-y-1">
+        <li>All orders are subject to product availability</li>
+        <li>Fresh herbs are seasonal and may sell out quickly</li>
+        <li>We ship within the United States only</li>
+        <li>Shipping times may vary depending on your location</li>
+      </ul>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Returns &amp; Refunds
+      </h2>
+      <p>
+        Due to the perishable nature of our products, we cannot accept returns
+        on fresh herbs. For other products, please contact us within 14 days
+        of delivery if you are unsatisfied and we will work with you to find a
+        resolution.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        CSA Subscriptions
+      </h2>
+      <p>
+        CSA subscriptions are billed on a recurring basis. You may cancel your
+        subscription at any time. Cancellations take effect at the end of the
+        current billing period.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Contact Us
+      </h2>
+      <p>
+        Questions about these terms? Contact us at{' '}
+        <a
+          href={`mailto:${SITE.email}`}
+          class="text-forest-700 underline underline-offset-2 hover:text-forest-900"
+        >
+          {SITE.email}
+        </a>.
+      </p>
+    </div>
+  </article>
+</BaseLayout>

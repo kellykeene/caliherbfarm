@@ -1,0 +1,39 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Hero from '@/components/home/Hero.astro';
+import CategoryBlocks from '@/components/home/CategoryBlocks.astro';
+import NewsletterSignup from '@/components/global/NewsletterSignup.astro';
+import InstagramFeed from '@/components/home/InstagramFeed.astro';
+import { getWebSiteSchema } from '@/lib/schema';
+---
+
+<BaseLayout
+  title="Home"
+  announcement="Spring CSA boxes are now available! Order yours before the equinox."
+  schema={getWebSiteSchema()}
+>
+  <Hero />
+  <CategoryBlocks />
+
+  <!-- Newsletter Section -->
+  <section
+    aria-labelledby="newsletter-heading"
+    class="py-16 sm:py-20"
+  >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2
+        id="newsletter-heading"
+        class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-3"
+      >
+        News From the Farm
+      </h2>
+      <p class="text-earth-500 mb-8 max-w-lg mx-auto">
+        Sign up to receive monthly updates with seasonal tips, plant profiles,
+        and discount codes.
+      </p>
+      <NewsletterSignup variant="inline" />
+    </div>
+  </section>
+
+  <InstagramFeed />
+</BaseLayout>

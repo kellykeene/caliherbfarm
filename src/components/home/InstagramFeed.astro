@@ -1,0 +1,54 @@
+---
+import { SITE } from '@/lib/constants';
+
+// Placeholder grid — will be replaced with Instagram API integration in Phase 3
+const placeholders = Array.from({ length: 8 }, (_, i) => i);
+---
+
+<section aria-labelledby="instagram-heading" class="py-16 sm:py-20 bg-earth-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-8">
+      <h2
+        id="instagram-heading"
+        class="font-display text-2xl sm:text-3xl font-bold text-forest-900"
+      >
+        From the Farm
+      </h2>
+      <p class="mt-2 text-earth-500">
+        Follow along on{' '}
+        <a
+          href={SITE.social.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-forest-700 underline underline-offset-2 hover:text-forest-900 transition-colors"
+        >
+          Instagram
+        </a>
+      </p>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      {placeholders.map((i) => (
+        <div class="aspect-square rounded-[--radius-card] overflow-hidden bg-gradient-to-br from-sage-100 to-earth-100">
+          <div class="w-full h-full flex items-center justify-center text-sage-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+            </svg>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

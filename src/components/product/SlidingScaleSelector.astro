@@ -1,0 +1,72 @@
+---
+interface Props {
+  slidingScale: {
+    low: { price: number; stripePriceId: string };
+    middle: { price: number; stripePriceId: string };
+    high: { price: number; stripePriceId: string };
+  };
+  productTitle: string;
+}
+
+const { slidingScale, productTitle } = Astro.props;
+
+function formatPrice(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+const tiers = [
+  {
+    key: 'low',
+    label: 'Low Income',
+    description: 'Financial hardship — no questions asked',
+    ...slidingScale.low,
+  },
+  {
+    key: 'middle',
+    label: 'Middle Income',
+    description: 'Reflects the actual cost of goods and labor',
+    ...slidingScale.middle,
+  },
+  {
+    key: 'high',
+    label: 'High Income',
+    description: 'Helps fund fair farm labor and keeps prices accessible',
+    ...slidingScale.high,
+  },
+];
+---
+
+<fieldset class="space-y-3">
+  <legend class="font-display text-lg font-semibold text-forest-900 mb-2">
+    Choose Your Tier
+  </legend>
+  <p class="text-sm text-earth-500 mb-4">
+    We offer sliding scale pricing to make herbal medicine accessible.
+    Choose the tier that feels right for your situation.
+  </p>
+  {tiers.map((tier, i) => (
+    <label
+      class="flex items-start gap-4 p-4 rounded-[--radius-card] border-2 border-sage-200 cursor-pointer hover:border-forest-500 transition-colors has-[:checked]:border-forest-700 has-[:checked]:bg-forest-50"
+    >
+      <input
+        type="radio"
+        name="sliding-scale-tier"
+        value={tier.stripePriceId}
+        data-price={tier.price}
+        data-tier={tier.key}
+        checked={i === 1}
+        class="mt-1 w-4 h-4 text-forest-700 accent-forest-700"
+      />
+      <div class="flex-1">
+        <div class="flex items-center justify-between">
+          <span class="font-semibold text-forest-900">{tier.label}</span>
+          <span class="font-semibold text-forest-700">
+            {formatPrice(tier.price)}
+            <span class="text-xs font-normal text-earth-500"> / quarter</span>
+          </span>
+        </div>
+        <p class="text-sm text-earth-500 mt-0.5">{tier.description}</p>
+      </div>
+    </label>
+  ))}
+</fieldset>

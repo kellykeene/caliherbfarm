@@ -1,0 +1,145 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import { getLocalBusinessSchema } from '@/lib/schema';
+---
+
+<BaseLayout
+  title="About the Farm"
+  description="Learn about Cali Herb Farm — our story, growing philosophy, and commitment to sustainable medicinal herb farming in California."
+  schema={getLocalBusinessSchema()}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumbs items={[{ label: 'About the Farm', href: '/about' }]} />
+  </div>
+
+  <!-- Page Header -->
+  <section aria-labelledby="about-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <h1
+      id="about-heading"
+      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-4"
+    >
+      About the Farm
+    </h1>
+    <p class="text-lg text-earth-500 max-w-2xl">
+      Farm Fresh &bull; Herbalist Grown &bull; Medicinal Plants
+    </p>
+  </section>
+
+  <!-- Story Section -->
+  <section aria-labelledby="story-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2
+          id="story-heading"
+          class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-6"
+        >
+          Our Story
+        </h2>
+        <div class="space-y-4 text-forest-900/80 leading-relaxed">
+          <p>
+            Cali Herb Farm was founded with a simple mission: to grow the
+            highest quality medicinal herbs and make them accessible to our
+            community. What started as a small garden has grown into a
+            specialty herb farm cultivating over 60 varieties of medicinal
+            plants.
+          </p>
+          <p>
+            We believe in the power of plant medicine and the importance of
+            knowing where your herbs come from. Every tincture, tea, and
+            topical we make begins with seeds we plant, tend, and harvest by
+            hand on our small California farm.
+          </p>
+          <p>
+            Our approach to herbalism is rooted in traditional knowledge,
+            informed by modern research, and guided by a deep respect for the
+            land. We practice sustainable farming methods that nourish both
+            the soil and the plants that grow in it.
+          </p>
+        </div>
+      </div>
+      <!-- Placeholder image -->
+      <div class="aspect-[4/3] rounded-[--radius-card] bg-gradient-to-br from-sage-100 to-sage-200 overflow-hidden">
+        <div class="w-full h-full flex items-center justify-center text-sage-400 text-sm">
+          Farm photo
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Philosophy Section -->
+  <section aria-labelledby="philosophy-heading" class="bg-earth-50 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <!-- Placeholder image -->
+        <div class="aspect-[4/3] rounded-[--radius-card] bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden order-2 lg:order-1">
+          <div class="w-full h-full flex items-center justify-center text-sage-400 text-sm">
+            Herb garden photo
+          </div>
+        </div>
+        <div class="order-1 lg:order-2">
+          <h2
+            id="philosophy-heading"
+            class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-6"
+          >
+            Growing Philosophy
+          </h2>
+          <div class="space-y-4 text-forest-900/80 leading-relaxed">
+            <p>
+              We grow all of our herbs using sustainable, organic practices.
+              No synthetic pesticides, herbicides, or fertilizers ever touch
+              our soil. We work with nature, not against it, building healthy
+              ecosystems that support both our medicinal plants and the
+              pollinators that visit them.
+            </p>
+            <p>
+              Every remedy we produce is handcrafted in small batches to
+              ensure the highest potency and quality. We harvest at peak
+              medicinal value and process herbs fresh whenever possible to
+              preserve their full spectrum of beneficial compounds.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Land Acknowledgment -->
+  <section aria-labelledby="land-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="max-w-3xl mx-auto bg-sage-100 rounded-[--radius-card] p-8">
+      <h2
+        id="land-heading"
+        class="font-display text-xl font-bold text-forest-900 mb-4"
+      >
+        Land Acknowledgment
+      </h2>
+      <p class="text-forest-900/80 leading-relaxed">
+        We acknowledge that we farm on the ancestral and unceded lands of
+        Indigenous peoples. We honor the original stewards of this land and
+        recognize their deep connection to these territories. We are
+        committed to learning from Indigenous land stewardship practices and
+        supporting the ongoing work of Native communities.
+      </p>
+    </div>
+  </section>
+
+  <!-- Where to Find Us -->
+  <section aria-labelledby="stockists-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h2
+      id="stockists-heading"
+      class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-8 text-center"
+    >
+      Where to Find Our Products
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      {['Local farmers markets', 'Community co-ops', 'Online shop'].map(
+        (location) => (
+          <div class="text-center p-6 bg-white rounded-[--radius-card] border border-sage-200">
+            <p class="font-medium text-forest-900">{location}</p>
+            <p class="text-sm text-earth-500 mt-1">Details coming soon</p>
+          </div>
+        ),
+      )}
+    </div>
+  </section>
+</BaseLayout>

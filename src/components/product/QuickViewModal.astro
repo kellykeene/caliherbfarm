@@ -1,0 +1,94 @@
+---
+// QuickViewModal: a native <dialog> used by ProductCard for inline product preview.
+// Product data is injected via JS data attributes on the trigger buttons.
+---
+
+<dialog
+  id="quick-view-dialog"
+  class="w-full max-w-lg rounded-[--radius-card] bg-cream p-0 shadow-xl backdrop:bg-black/50"
+  aria-labelledby="qv-title"
+>
+  <div class="relative p-6">
+    <!-- Close button -->
+    <button
+      type="button"
+      id="qv-close"
+      aria-label="Close quick view"
+      class="absolute top-3 right-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-earth-500 hover:text-forest-900 transition-colors"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+
+    <!-- Image placeholder -->
+    <div class="aspect-[4/3] rounded-lg bg-gradient-to-br from-sage-100 to-earth-100 mb-4 flex items-center justify-center text-sage-400">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+      </svg>
+    </div>
+
+    <!-- Product info -->
+    <h2 id="qv-title" class="font-display text-xl font-bold text-forest-900 mb-1"></h2>
+    <p id="qv-price" class="text-forest-700 font-semibold mb-2"></p>
+    <p id="qv-description" class="text-sm text-earth-500 leading-relaxed mb-6"></p>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <a
+        id="qv-view-link"
+        href="#"
+        class="flex-1 inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 bg-forest-700 text-white text-sm font-medium rounded-[--radius-card] hover:bg-forest-900 transition-colors text-center"
+      >
+        View Full Details
+      </a>
+      <button
+        type="button"
+        id="qv-close-secondary"
+        class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 border-2 border-sage-200 text-forest-700 text-sm font-medium rounded-[--radius-card] hover:bg-forest-50 transition-colors"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('quick-view-dialog') as HTMLDialogElement | null;
+  const qvTitle = document.getElementById('qv-title');
+  const qvPrice = document.getElementById('qv-price');
+  const qvDesc = document.getElementById('qv-description');
+  const qvLink = document.getElementById('qv-view-link') as HTMLAnchorElement | null;
+  const qvClose = document.getElementById('qv-close');
+  const qvCloseSecondary = document.getElementById('qv-close-secondary');
+
+  let lastFocusedElement: HTMLElement | null = null;
+
+  // Open from any quick-view trigger
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement).closest('[data-quick-view]') as HTMLElement | null;
+    if (!trigger || !dialog) return;
+
+    lastFocusedElement = trigger;
+
+    qvTitle!.textContent = trigger.dataset.qvTitle || '';
+    qvPrice!.textContent = trigger.dataset.qvPrice || '';
+    qvDesc!.textContent = trigger.dataset.qvDescription || '';
+    qvLink!.href = trigger.dataset.qvHref || '#';
+
+    dialog.showModal();
+    // Focus the close button when modal opens
+    qvClose?.focus();
+  });
+
+  function closeDialog() {
+    dialog?.close();
+    // Return focus to the trigger element
+    lastFocusedElement?.focus();
+  }
+
+  qvClose?.addEventListener('click', closeDialog);
+  qvCloseSecondary?.addEventListener('click', closeDialog);
+
+  // Native <dialog> already traps focus and closes on Escape
+</script>

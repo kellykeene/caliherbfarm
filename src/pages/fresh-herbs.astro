@@ -1,0 +1,140 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import HarvestCalendar from '@/components/herbs/HarvestCalendar.astro';
+import HerbBulletinSignup from '@/components/herbs/HerbBulletinSignup.astro';
+import { getFaqSchema } from '@/lib/schema';
+
+const faqSchema = getFaqSchema([
+  {
+    question: 'When are fresh herbs available from Cali Herb Farm?',
+    answer:
+      'Fresh herbs are available spring and summer only. Availability depends on weather and growing conditions. Sign up for our herb bulletin to get notified the week before herbs are ready to harvest.',
+  },
+  {
+    question: 'How many herb varieties does Cali Herb Farm grow?',
+    answer:
+      'We grow over 60 varieties of medicinal herbs on our small California farm, including echinacea, elderberry, lavender, calendula, chamomile, and many more.',
+  },
+  {
+    question: 'Can I visit Cali Herb Farm?',
+    answer:
+      'Our farm is not open to the public for regular visits. Please contact us by email if you would like to arrange a visit.',
+  },
+  {
+    question: 'Does Cali Herb Farm use organic practices?',
+    answer:
+      'Yes, we use sustainable organic practices. No synthetic pesticides, herbicides, or fertilizers touch our soil. We work with nature to build healthy ecosystems.',
+  },
+]);
+---
+
+<BaseLayout
+  title="Fresh Herbs"
+  description="Over 60 varieties of fresh medicinal herbs grown seasonally on our California herb farm. View our harvest calendar and sign up for availability updates."
+  schema={faqSchema}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumbs items={[{ label: 'Fresh Herbs', href: '/fresh-herbs' }]} />
+  </div>
+
+  <!-- Page Header -->
+  <section aria-labelledby="herbs-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <h1
+      id="herbs-heading"
+      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-4"
+    >
+      Farm Fresh Herbs
+    </h1>
+    <p class="text-lg text-earth-500 max-w-2xl">
+      Herbalist Grown &bull; Seed to Harvest &bull; 60+ Medicinal Varieties
+    </p>
+  </section>
+
+  <!-- Philosophy -->
+  <section aria-labelledby="herb-philosophy-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2
+          id="herb-philosophy-heading"
+          class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-6"
+        >
+          From Seed to Your Hands
+        </h2>
+        <div class="space-y-4 text-forest-900/80 leading-relaxed">
+          <p>
+            There is something irreplaceable about tending a plant from seed to
+            harvest. When you spend months watching the slow unfurling of leaves,
+            the first buds forming, the shift in fragrance as plants reach peak
+            potency &mdash; you develop an intimate knowledge that no textbook
+            can teach.
+          </p>
+          <p>
+            Every herb we offer has been grown, tended, and harvested by hand on
+            our small farm. We time each harvest to the moment of peak medicinal
+            value, ensuring you receive herbs at their most potent and vibrant.
+          </p>
+          <p>
+            Fresh herbs are available <strong>spring and summer only</strong>.
+            Availability varies by season and weather. Join our herb bulletin
+            below to be notified when fresh herbs are ready.
+          </p>
+        </div>
+      </div>
+      <!-- Placeholder image -->
+      <div class="aspect-[4/3] rounded-[--radius-card] bg-gradient-to-br from-sage-100 to-sage-200 overflow-hidden">
+        <div class="w-full h-full flex items-center justify-center text-sage-400 text-sm">
+          Herb harvest photo
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Harvest Calendar -->
+  <section aria-labelledby="calendar-heading" class="bg-earth-50 py-16">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2
+        id="calendar-heading"
+        class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-3 text-center"
+      >
+        Harvest Calendar
+      </h2>
+      <p class="text-earth-500 text-center mb-8 max-w-lg mx-auto">
+        Typical availability by season. Actual timing varies with weather and
+        growing conditions.
+      </p>
+      <div class="bg-white rounded-[--radius-card] border border-sage-200 overflow-hidden">
+        <HarvestCalendar />
+      </div>
+    </div>
+  </section>
+
+  <!-- Herb Bulletin Signup -->
+  <section aria-labelledby="bulletin-heading" class="py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2
+        id="bulletin-heading"
+        class="font-display text-2xl sm:text-3xl font-bold text-forest-900 mb-3"
+      >
+        Join Our Fresh Herbs Bulletin
+      </h2>
+      <p class="text-earth-500 mb-8 max-w-lg mx-auto">
+        Get notified the week before herbs are ready to harvest. Emails go out
+        during spring and summer growing seasons only.
+      </p>
+      <HerbBulletinSignup />
+    </div>
+  </section>
+
+  <!-- Availability Disclaimer -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-3xl mx-auto bg-sage-100 rounded-[--radius-card] p-6 text-center">
+      <p class="text-sm text-forest-900/70">
+        <strong>Please note:</strong> Fresh herb availability is seasonal and
+        subject to change based on weather, pest pressure, and other natural
+        factors. The harvest calendar above shows typical timing but is not a
+        guarantee. Sign up for our bulletin for real-time availability updates.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,82 @@
+---
+import { PRODUCT_CATEGORIES } from '@/lib/constants';
+
+interface Props {
+  activeCategory?: string;
+}
+
+const { activeCategory = 'all' } = Astro.props;
+---
+
+<nav aria-label="Product categories" class="mb-8">
+  <ul class="flex flex-wrap gap-2" role="tablist" aria-label="Filter by category">
+    {PRODUCT_CATEGORIES.map((cat) => {
+      const isActive = cat.slug === activeCategory;
+      return (
+        <li role="presentation">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isActive ? 'true' : 'false'}
+            data-category={cat.slug}
+            class={`inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+              isActive
+                ? 'bg-forest-700 text-white'
+                : 'bg-white border border-sage-200 text-forest-700 hover:bg-forest-50'
+            }`}
+          >
+            {cat.label}
+          </button>
+        </li>
+      );
+    })}
+  </ul>
+</nav>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+  const items = document.querySelectorAll<HTMLElement>('#product-grid [role="listitem"]');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const category = btn.dataset.category;
+
+      // Update active tab
+      buttons.forEach((b) => {
+        const isActive = b.dataset.category === category;
+        b.setAttribute('aria-selected', String(isActive));
+        b.className = `inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+          isActive
+            ? 'bg-forest-700 text-white'
+            : 'bg-white border border-sage-200 text-forest-700 hover:bg-forest-50'
+        }`;
+      });
+
+      // Filter products
+      items.forEach((item) => {
+        if (category === 'all' || item.dataset.category === category) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+
+      // Update URL hash
+      const url = new URL(window.location.href);
+      if (category === 'all') {
+        url.searchParams.delete('category');
+      } else {
+        url.searchParams.set('category', category!);
+      }
+      history.replaceState(null, '', url.toString());
+    });
+  });
+
+  // Apply initial filter from URL
+  const params = new URLSearchParams(window.location.search);
+  const initial = params.get('category');
+  if (initial) {
+    const btn = document.querySelector<HTMLButtonElement>(`[data-category="${initial}"]`);
+    btn?.click();
+  }
+</script>

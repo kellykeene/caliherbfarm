@@ -1,0 +1,82 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import { SITE } from '@/lib/constants';
+---
+
+<BaseLayout title="Privacy Policy" description="Privacy policy for Cali Herb Farm.">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumbs items={[{ label: 'Privacy Policy', href: '/privacy-policy' }]} />
+  </div>
+
+  <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h1 class="font-display text-3xl sm:text-4xl font-bold text-forest-900 mb-8">
+      Privacy Policy
+    </h1>
+
+    <div class="space-y-6 text-forest-900/80 leading-relaxed">
+      <p>
+        <strong>Last updated:</strong> April 2026
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Information We Collect
+      </h2>
+      <p>
+        When you visit {SITE.name}, we may collect information you provide
+        directly, such as your name, email address, shipping address, and
+        payment information when you make a purchase or sign up for our
+        newsletter.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        How We Use Your Information
+      </h2>
+      <p>We use the information we collect to:</p>
+      <ul class="list-disc pl-6 space-y-1">
+        <li>Process and fulfill your orders</li>
+        <li>Send you order confirmations and shipping updates</li>
+        <li>Send newsletter updates (if you opted in)</li>
+        <li>Improve our website and customer experience</li>
+      </ul>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Payment Processing
+      </h2>
+      <p>
+        We use Stripe to process payments. Your payment information is sent
+        directly to Stripe and is never stored on our servers. Please review
+        <a
+          href="https://stripe.com/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-forest-700 underline underline-offset-2 hover:text-forest-900"
+        >
+          Stripe's Privacy Policy
+        </a>
+        for details on how they handle your data.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Newsletter
+      </h2>
+      <p>
+        If you sign up for our newsletter, we collect your email address. You
+        can unsubscribe at any time using the link in any newsletter email.
+      </p>
+
+      <h2 class="font-display text-xl font-bold text-forest-900 pt-4">
+        Contact Us
+      </h2>
+      <p>
+        If you have questions about this privacy policy, please contact us at{' '}
+        <a
+          href={`mailto:${SITE.email}`}
+          class="text-forest-700 underline underline-offset-2 hover:text-forest-900"
+        >
+          {SITE.email}
+        </a>.
+      </p>
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,57 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import CategoryFilter from '@/components/product/CategoryFilter.astro';
+import ProductGrid from '@/components/product/ProductGrid.astro';
+import { getCollection } from 'astro:content';
+import { SITE } from '@/lib/constants';
+
+const products = await getCollection('products');
+
+// Sort: featured first, then alphabetical
+const sortedProducts = products.sort((a, b) => {
+  if (a.data.featured && !b.data.featured) return -1;
+  if (!a.data.featured && b.data.featured) return 1;
+  return a.data.title.localeCompare(b.data.title);
+});
+
+const itemListSchema = {
+  '@type': 'ItemList',
+  name: 'Cali Herb Farm Products',
+  numberOfItems: sortedProducts.length,
+  itemListElement: sortedProducts.map((p, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `${SITE.url}/shop/${p.id}`,
+    name: p.data.title,
+  })),
+};
+---
+
+<BaseLayout
+  title="Shop"
+  description="Shop handcrafted herbal remedies, tinctures, teas, topicals, and CSA subscriptions from Cali Herb Farm."
+  schema={itemListSchema}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumbs items={[{ label: 'Shop', href: '/shop' }]} />
+  </div>
+
+  <section aria-labelledby="shop-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h1
+      id="shop-heading"
+      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-8"
+    >
+      Shop
+    </h1>
+
+    <CategoryFilter />
+    <ProductGrid products={sortedProducts} />
+
+    {sortedProducts.length === 0 && (
+      <p class="text-center text-earth-500 py-12">
+        No products available at the moment. Check back soon!
+      </p>
+    )}
+  </section>
+</BaseLayout>

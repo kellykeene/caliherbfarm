@@ -1,0 +1,145 @@
+---
+import { SITE } from '@/lib/constants';
+import NewsletterSignup from './NewsletterSignup.astro';
+
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="bg-forest-900 text-white mt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      <!-- Brand & About -->
+      <div class="sm:col-span-2 lg:col-span-1">
+        <p class="font-display text-xl font-bold mb-3">{SITE.name}</p>
+        <p class="text-forest-200 text-sm leading-relaxed">
+          Small specialty herb farm growing 60+ varieties of medicinal plants.
+          Handcrafted remedies made with care.
+        </p>
+        <p class="text-forest-200 text-sm mt-3">{SITE.location}</p>
+      </div>
+
+      <!-- Navigation -->
+      <div>
+        <h2 class="text-sm font-semibold uppercase tracking-wider mb-4 text-gold-300">
+          Navigate
+        </h2>
+        <ul class="space-y-2" role="list">
+          <li>
+            <a href="/" class="text-forest-200 hover:text-white text-sm transition-colors">
+              Home
+            </a>
+          </li>
+          <li>
+            <a href="/shop" class="text-forest-200 hover:text-white text-sm transition-colors">
+              Shop
+            </a>
+          </li>
+          <li>
+            <a href="/fresh-herbs" class="text-forest-200 hover:text-white text-sm transition-colors">
+              Fresh Herbs
+            </a>
+          </li>
+          <li>
+            <a href="/about" class="text-forest-200 hover:text-white text-sm transition-colors">
+              About the Farm
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Contact & Legal -->
+      <div>
+        <h2 class="text-sm font-semibold uppercase tracking-wider mb-4 text-gold-300">
+          Info
+        </h2>
+        <ul class="space-y-2" role="list">
+          <li>
+            <a
+              href={`mailto:${SITE.email}`}
+              class="text-forest-200 hover:text-white text-sm transition-colors"
+            >
+              {SITE.email}
+            </a>
+          </li>
+          <li>
+            <a href="/privacy-policy" class="text-forest-200 hover:text-white text-sm transition-colors">
+              Privacy Policy
+            </a>
+          </li>
+          <li>
+            <a href="/terms-of-service" class="text-forest-200 hover:text-white text-sm transition-colors">
+              Terms of Service
+            </a>
+          </li>
+          <li class="pt-2">
+            <p class="text-forest-200 text-sm italic">
+              Wholesale &amp; bulk order inquiries welcome.
+            </p>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Newsletter -->
+      <div>
+        <h2 class="text-sm font-semibold uppercase tracking-wider mb-4 text-gold-300">
+          Stay Connected
+        </h2>
+        <NewsletterSignup variant="footer" />
+        <div class="flex items-center gap-4 mt-6">
+          <a
+            href={SITE.social.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Follow us on Instagram"
+            class="min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-200 hover:text-white transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </a>
+          <a
+            href={SITE.social.bluesky}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Follow us on Bluesky"
+            class="min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-200 hover:text-white transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.785 2.627 3.572 3.503 6.168 3.209-3.867.65-7.155 2.226-3.237 7.798 4.32 5.126 6.987-.14 7.86-3.158.194-.672.29-1.009.585-1.009.296 0 .39.337.585 1.01.873 3.017 3.54 8.283 7.86 3.157 3.918-5.572.63-7.148-3.237-7.798 2.596.294 5.383-.582 6.168-3.21.246-.828.624-5.788.624-6.478 0-.689-.139-1.861-.902-2.203-.659-.3-1.664-.621-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8z"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="mt-12 pt-8 border-t border-forest-700 text-center">
+      <p class="text-forest-200 text-sm">
+        &copy; {currentYear} {SITE.name}. All rights reserved.
+      </p>
+      <p class="text-forest-200/70 text-xs mt-2">
+        Our farm is not open to the public. Please contact us if you'd like to visit.
+      </p>
+    </div>
+  </div>
+</footer>

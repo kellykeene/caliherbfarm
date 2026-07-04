@@ -1,0 +1,54 @@
+---
+import ProductCard from './ProductCard.astro';
+
+interface Product {
+  id: string;
+  data: {
+    title: string;
+    description: string;
+    price: number;
+    priceDisplay: string;
+    image: string;
+    category: string;
+    inStock: boolean;
+    variants?: { label: string; price: number; stripePriceId: string; inStock: boolean }[];
+    isSubscription?: boolean;
+    slidingScale?: {
+      low: { price: number; stripePriceId: string };
+      middle: { price: number; stripePriceId: string };
+      high: { price: number; stripePriceId: string };
+    };
+  };
+}
+
+interface Props {
+  products: Product[];
+}
+
+const { products } = Astro.props;
+---
+
+<div
+  id="product-grid"
+  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+  role="list"
+  aria-label="Products"
+>
+  {products.map((product) => (
+    <div role="listitem" data-category={product.data.category}>
+      <ProductCard
+        slug={product.id}
+        title={product.data.title}
+        description={product.data.description}
+        price={product.data.price}
+        priceDisplay={product.data.priceDisplay}
+        image={product.data.image}
+        category={product.data.category}
+        inStock={product.data.inStock}
+        variants={product.data.variants}
+        isSubscription={product.data.isSubscription}
+        slidingScale={product.data.slidingScale}
+      />
+    </div>
+  ))}
+</div>

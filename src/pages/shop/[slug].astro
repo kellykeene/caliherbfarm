@@ -1,0 +1,306 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import SlidingScaleSelector from '@/components/product/SlidingScaleSelector.astro';
+import ProductCard from '@/components/product/ProductCard.astro';
+import { getCollection, render } from 'astro:content';
+import { SITE } from '@/lib/constants';
+import { getProductSchema } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const products = await getCollection('products');
+  return products.map((product) => ({
+    params: { slug: product.id },
+    props: { product },
+  }));
+}
+
+const { product } = Astro.props;
+const { Content } = await render(product);
+
+// Get related products
+const allProducts = await getCollection('products');
+const relatedSlugs = product.data.relatedProducts || [];
+const relatedProducts = relatedSlugs
+  .map((slug: string) => allProducts.find((p) => p.id === slug))
+  .filter(Boolean);
+
+// Fallback: same category if no related products
+const fallbackRelated =
+  relatedProducts.length > 0
+    ? relatedProducts
+    : allProducts
+        .filter((p) => p.data.category === product.data.category && p.id !== product.id)
+        .slice(0, 4);
+
+function formatPrice(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+const variants = product.data.variants || [];
+const lowPrice = variants.length > 0 ? Math.min(...variants.map((v: { price: number }) => v.price)) : product.data.price;
+const highPrice = variants.length > 0 ? Math.max(...variants.map((v: { price: number }) => v.price)) : product.data.price;
+
+const schema = getProductSchema({
+  name: product.data.title,
+  description: product.data.description,
+  image: `${SITE.url}${product.data.image}`,
+  sku: product.data.sku,
+  lowPrice: lowPrice / 100,
+  highPrice: highPrice / 100,
+  offerCount: variants.length || 1,
+  inStock: product.data.inStock,
+});
+---
+
+<BaseLayout
+  title={product.data.title}
+  description={product.data.description}
+  schema={schema}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <Breadcrumbs
+      items={[
+        { label: 'Shop', href: '/shop' },
+        { label: product.data.title, href: `/shop/${product.id}` },
+      ]}
+    />
+  </div>
+
+  <!-- Product Detail -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <!-- Image -->
+      <div class="aspect-square rounded-[--radius-card] bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden">
+        <div class="w-full h-full flex items-center justify-center text-sage-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="64"
+            height="64"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div>
+        <h1 class="font-display text-3xl sm:text-4xl font-bold text-forest-900 mb-2">
+          {product.data.title}
+        </h1>
+        <p class="text-earth-500 mb-6">{product.data.description}</p>
+
+        {/* CSA Sliding Scale */}
+        {product.data.slidingScale ? (
+          <div class="mb-6" id="product-options">
+            <SlidingScaleSelector
+              slidingScale={product.data.slidingScale}
+              productTitle={product.data.title}
+            />
+          </div>
+        ) : variants.length > 0 ? (
+          /* Standard Variant Selector */
+          <fieldset class="mb-6" id="product-options">
+            <legend class="font-display text-lg font-semibold text-forest-900 mb-3">
+              Size
+            </legend>
+            <div class="flex flex-wrap gap-3">
+              {variants.map((variant: { label: string; price: number; stripePriceId: string; inStock: boolean }, i: number) => (
+                <label
+                  class={`flex items-center gap-2 px-4 py-3 rounded-[--radius-card] border-2 cursor-pointer transition-colors ${
+                    variant.inStock
+                      ? 'border-sage-200 hover:border-forest-500 has-[:checked]:border-forest-700 has-[:checked]:bg-forest-50'
+                      : 'border-earth-100 bg-earth-50 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="variant"
+                    value={variant.stripePriceId}
+                    data-price={variant.price}
+                    data-label={variant.label}
+                    checked={i === 0}
+                    disabled={!variant.inStock}
+                    class="w-4 h-4 accent-forest-700"
+                  />
+                  <span class="font-medium text-forest-900">{variant.label}</span>
+                  <span class="text-forest-700">{formatPrice(variant.price)}</span>
+                  {!variant.inStock && (
+                    <span class="text-xs text-earth-500">(Sold out)</span>
+                  )}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : (
+          /* Single price */
+          <p class="text-2xl font-bold text-forest-700 mb-6">
+            {formatPrice(product.data.price)}
+          </p>
+        )}
+
+        {/* Quantity + Add to Cart */}
+        {product.data.inStock ? (
+          <div class="flex items-center gap-4 mb-8">
+            {!product.data.isSubscription && (
+              <div class="flex items-center border-2 border-sage-200 rounded-[--radius-card]">
+                <button
+                  type="button"
+                  id="qty-decrease"
+                  aria-label="Decrease quantity"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-700 hover:bg-forest-50 transition-colors"
+                >
+                  -
+                </button>
+                <span
+                  id="qty-display"
+                  class="min-w-[44px] text-center font-semibold text-forest-900"
+                  aria-live="polite"
+                  aria-label="Quantity"
+                >
+                  1
+                </span>
+                <button
+                  type="button"
+                  id="qty-increase"
+                  aria-label="Increase quantity"
+                  class="min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-700 hover:bg-forest-50 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              id="add-to-cart"
+              data-slug={product.id}
+              data-title={product.data.title}
+              data-image={product.data.image}
+              data-is-subscription={product.data.isSubscription ? 'true' : 'false'}
+              class="flex-1 min-h-[44px] px-8 py-3 bg-forest-700 text-white font-semibold rounded-[--radius-card] hover:bg-forest-900 transition-colors"
+            >
+              {product.data.isSubscription ? 'Subscribe' : 'Add to Cart'}
+            </button>
+          </div>
+        ) : (
+          <div class="mb-8">
+            <span class="inline-flex items-center min-h-[44px] px-8 py-3 bg-earth-100 text-earth-500 font-semibold rounded-[--radius-card] cursor-not-allowed">
+              Sold Out
+            </span>
+          </div>
+        )}
+
+        <!-- Product description -->
+        <div class="prose prose-forest max-w-none text-forest-900/80">
+          <Content />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* Related Products */}
+  {fallbackRelated.length > 0 && (
+    <section aria-labelledby="related-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <h2
+        id="related-heading"
+        class="font-display text-2xl font-bold text-forest-900 mb-6"
+      >
+        You Might Also Like
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {fallbackRelated.slice(0, 4).map((rel: typeof product) => (
+          <ProductCard
+            slug={rel.id}
+            title={rel.data.title}
+            description={rel.data.description}
+            price={rel.data.price}
+            priceDisplay={rel.data.priceDisplay}
+            image={rel.data.image}
+            category={rel.data.category}
+            inStock={rel.data.inStock}
+            variants={rel.data.variants}
+            isSubscription={rel.data.isSubscription}
+            slidingScale={rel.data.slidingScale}
+          />
+        ))}
+      </div>
+    </section>
+  )}
+</BaseLayout>
+
+<script>
+  import { addToCart, getCartCount } from '@/lib/cart';
+
+  let quantity = 1;
+  const qtyDisplay = document.getElementById('qty-display');
+  const btnDecrease = document.getElementById('qty-decrease');
+  const btnIncrease = document.getElementById('qty-increase');
+  const btnAddToCart = document.getElementById('add-to-cart') as HTMLButtonElement | null;
+
+  btnDecrease?.addEventListener('click', () => {
+    if (quantity > 1) {
+      quantity--;
+      if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+    }
+  });
+
+  btnIncrease?.addEventListener('click', () => {
+    quantity++;
+    if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+  });
+
+  btnAddToCart?.addEventListener('click', () => {
+    const slug = btnAddToCart.dataset.slug!;
+    const title = btnAddToCart.dataset.title!;
+    const image = btnAddToCart.dataset.image!;
+    const isSubscription = btnAddToCart.dataset.isSubscription === 'true';
+
+    // Get selected variant or sliding scale tier
+    const selectedRadio = document.querySelector<HTMLInputElement>(
+      'input[name="variant"]:checked, input[name="sliding-scale-tier"]:checked',
+    );
+
+    if (!selectedRadio) return;
+
+    const stripePriceId = selectedRadio.value;
+    const price = Number(selectedRadio.dataset.price);
+    const variant = selectedRadio.dataset.label || selectedRadio.dataset.tier || '';
+
+    addToCart({
+      slug,
+      title,
+      variant,
+      stripePriceId,
+      price,
+      quantity: isSubscription ? 1 : quantity,
+      image,
+      isSubscription,
+    });
+
+    // Feedback
+    const original = btnAddToCart.textContent;
+    btnAddToCart.textContent = 'Added!';
+    btnAddToCart.classList.add('bg-sage-600');
+    setTimeout(() => {
+      btnAddToCart.textContent = original;
+      btnAddToCart.classList.remove('bg-sage-600');
+    }, 1500);
+
+    // Update cart count in header
+    const countEl = document.getElementById('cart-count');
+    if (countEl) {
+      const count = getCartCount();
+      countEl.textContent = String(count);
+      countEl.classList.remove('hidden');
+    }
+  });
+</script>

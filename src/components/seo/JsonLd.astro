@@ -1,0 +1,13 @@
+---
+interface Props {
+  schema: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { schema } = Astro.props;
+
+const jsonLd = Array.isArray(schema)
+  ? schema.map((s) => ({ '@context': 'https://schema.org', ...s }))
+  : { '@context': 'https://schema.org', ...schema };
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

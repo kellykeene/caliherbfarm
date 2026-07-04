@@ -1,0 +1,110 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import SkipToContent from '@/components/global/SkipToContent.astro';
+import AnnouncementBanner from '@/components/global/AnnouncementBanner.astro';
+import Header from '@/components/global/Header.astro';
+import Footer from '@/components/global/Footer.astro';
+import QuickViewModal from '@/components/product/QuickViewModal.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { SITE } from '@/lib/constants';
+import { getOrganizationSchema } from '@/lib/schema';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+  ogImage?: string;
+  announcement?: string;
+}
+
+const {
+  title,
+  description = SITE.description,
+  schema,
+  ogImage = '/og-image.jpg',
+  announcement,
+} = Astro.props;
+
+const pageTitle = title === 'Home' ? SITE.name : `${title} | ${SITE.name}`;
+const canonicalUrl = new URL(Astro.url.pathname, SITE.url);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{pageTitle}</title>
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={`${SITE.url}${ogImage}`} />
+    <meta property="og:site_name" content={SITE.name} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${SITE.url}${ogImage}`} />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- View Transitions -->
+    <ClientRouter />
+
+    <!-- JSON-LD: Organization (all pages) -->
+    <JsonLd schema={getOrganizationSchema()} />
+
+    <!-- Page-specific JSON-LD -->
+    {schema && <JsonLd schema={schema} />}
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <SkipToContent />
+    {announcement && <AnnouncementBanner message={announcement} />}
+    <Header />
+    <main id="main-content" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <QuickViewModal />
+
+    <!-- Initialize cart count on every page -->
+    <script>
+      import { getCartCount } from '@/lib/cart';
+
+      function initCartCount() {
+        const countEl = document.getElementById('cart-count');
+        if (countEl) {
+          const count = getCartCount();
+          if (count > 0) {
+            countEl.textContent = String(count);
+            countEl.classList.remove('hidden');
+          } else {
+            countEl.classList.add('hidden');
+          }
+        }
+      }
+
+      // Run on initial load and after view transitions
+      initCartCount();
+      document.addEventListener('astro:after-swap', initCartCount);
+    </script>
+  </body>
+</html>

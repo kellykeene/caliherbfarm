@@ -1,0 +1,54 @@
+---
+interface Props {
+  variant?: 'inline' | 'footer';
+}
+
+const { variant = 'inline' } = Astro.props;
+const isFooter = variant === 'footer';
+---
+
+<form
+  name="newsletter"
+  method="POST"
+  data-netlify="true"
+  aria-label="Newsletter signup"
+  class={isFooter ? '' : 'max-w-md mx-auto'}
+>
+  <input type="hidden" name="form-name" value="newsletter" />
+  <div class={`flex ${isFooter ? 'flex-col gap-3' : 'flex-col sm:flex-row gap-3'}`}>
+    <div class="flex-1">
+      <label for={`email-${variant}`} class="sr-only">
+        Email address
+      </label>
+      <input
+        type="email"
+        id={`email-${variant}`}
+        name="email"
+        required
+        placeholder="Your email address"
+        autocomplete="email"
+        class={`w-full px-4 py-3 rounded-[--radius-card] text-sm transition-colors ${
+          isFooter
+            ? 'bg-forest-700 border border-forest-600 text-white placeholder:text-forest-200/60 focus:border-sage-400'
+            : 'bg-white border-2 border-sage-200 text-forest-900 placeholder:text-earth-500 focus:border-forest-500'
+        }`}
+      />
+    </div>
+    <button
+      type="submit"
+      class={`min-h-[44px] px-6 py-3 rounded-[--radius-card] text-sm font-medium transition-colors ${
+        isFooter
+          ? 'bg-plum-600 text-white hover:bg-plum-400'
+          : 'bg-barn-500 text-white hover:bg-barn-700'
+      }`}
+    >
+      Subscribe
+    </button>
+  </div>
+  <p
+    id={`email-hint-${variant}`}
+    class={`text-xs mt-2 ${isFooter ? 'text-forest-200/70' : 'text-earth-500'}`}
+  >
+    Monthly updates with seasonal tips, plant profiles, and more.
+  </p>
+</form>

@@ -1,0 +1,85 @@
+---
+const herbs = [
+  { name: 'Echinacea', spring: true, summer: true, fall: false, winter: false },
+  { name: 'Elderberry', spring: false, summer: true, fall: true, winter: false },
+  { name: 'Lavender', spring: true, summer: true, fall: false, winter: false },
+  { name: 'Calendula', spring: true, summer: true, fall: true, winter: false },
+  { name: 'Chamomile', spring: true, summer: true, fall: false, winter: false },
+  { name: 'Lemon Balm', spring: true, summer: true, fall: true, winter: false },
+  { name: 'Peppermint', spring: true, summer: true, fall: true, winter: false },
+  { name: 'Rosemary', spring: true, summer: true, fall: true, winter: true },
+  { name: 'Tulsi (Holy Basil)', spring: false, summer: true, fall: true, winter: false },
+  { name: 'Yarrow', spring: true, summer: true, fall: false, winter: false },
+  { name: 'Mugwort', spring: true, summer: true, fall: false, winter: false },
+  { name: 'Valerian', spring: false, summer: true, fall: true, winter: false },
+  { name: 'St. John\'s Wort', spring: false, summer: true, fall: false, winter: false },
+  { name: 'Nettle', spring: true, summer: false, fall: false, winter: false },
+  { name: 'Elecampane', spring: false, summer: false, fall: true, winter: false },
+  { name: 'Yerba Mansa', spring: true, summer: true, fall: false, winter: false },
+];
+
+const seasons = ['spring', 'summer', 'fall', 'winter'] as const;
+
+function seasonLabel(season: string): string {
+  return season.charAt(0).toUpperCase() + season.slice(1);
+}
+---
+
+<div class="overflow-x-auto">
+  <table class="w-full text-sm" aria-label="Herb availability by season">
+    <thead>
+      <tr class="border-b-2 border-sage-200">
+        <th
+          scope="col"
+          class="text-left py-3 px-4 font-semibold text-forest-900"
+        >
+          Herb
+        </th>
+        {seasons.map((season) => (
+          <th
+            scope="col"
+            class="text-center py-3 px-4 font-semibold text-forest-900"
+          >
+            {seasonLabel(season)}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {herbs.map((herb, i) => (
+        <tr class={`border-b border-sage-100 ${i % 2 === 0 ? 'bg-white' : 'bg-earth-50'}`}>
+          <td class="py-3 px-4 font-medium text-forest-900">{herb.name}</td>
+          {seasons.map((season) => (
+            <td class="text-center py-3 px-4">
+              {herb[season] ? (
+                <span class="inline-flex items-center justify-center w-6 h-6 bg-forest-100 text-forest-700 rounded-full" aria-label="Available">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+              ) : (
+                <span class="text-earth-300" aria-label="Not available">&mdash;</span>
+              )}
+            </td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<!-- Mobile card view -->
+<div class="sm:hidden mt-6 space-y-3">
+  <p class="text-xs text-earth-500 italic">Scroll the table above or view cards below.</p>
+</div>
