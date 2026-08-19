@@ -1,0 +1,103 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import CategoryNav from '@/components/product/CategoryNav.astro';
+import ProductGrid from '@/components/product/ProductGrid.astro';
+import HerbBulletinSignup from '@/components/herbs/HerbBulletinSignup.astro';
+import {
+  findCategory,
+  getStorefrontCatalog,
+  getVisibleCategories,
+  productsIn,
+} from '@/lib/catalog';
+import { SITE, productHref } from '@/lib/constants';
+
+const { category: slug } = Astro.params;
+
+const [categories, catalog] = await Promise.all([
+  getVisibleCategories(),
+  getStorefrontCatalog(),
+]);
+
+const category = findCategory(categories, slug!);
+// A hidden or deleted category must 404 rather than render an empty shell.
+if (!category) return new Response('Not found', { status: 404 });
+
+const products = productsIn(catalog, category.slug);
+
+const itemListSchema = {
+  '@type': 'ItemList',
+  name: `${category.label} | ${SITE.name}`,
+  numberOfItems: products.length,
+  itemListElement: products.map((p, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `${SITE.url}${productHref(p.id)}`,
+    name: p.data.title,
+  })),
+};
+---
+
+<BaseLayout
+  title={category.label}
+  description={category.blurb}
+  schema={itemListSchema}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-right">
+    <Breadcrumbs
+      items={[
+        { label: 'Shop', href: '/shop' },
+        { label: category.label, href: `/shop/${category.slug}` },
+      ]}
+    />
+  </div>
+
+  <section aria-labelledby="category-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <h1
+      id="category-heading"
+      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-3 text-right"
+    >
+      {category.label}
+    </h1>
+    <p class="text-lg text-earth-500 max-w-2xl mb-8">{category.blurb}</p>
+
+    <CategoryNav active={category.slug} />
+
+    {products.length > 0 ? (
+      <ProductGrid products={products} id={`grid-${category.slug}`} label={category.label} />
+    ) : category.slug === 'fresh-herbs' ? (
+      <div class="rounded-[--radius-card] border border-sage-200 bg-white p-8 sm:p-10 text-center max-w-3xl mx-auto">
+        <h2 class="font-display text-2xl font-bold text-forest-900 mb-3">
+          Fresh herbs are cut to order
+        </h2>
+        <p class="text-earth-500 leading-relaxed mb-6">
+          We cut fresh herbs to order, and what is ready depends on the
+          weather that week rather than on a schedule. Join the herb bulletin
+          and we will email you the week before a variety is ready to cut.
+        </p>
+        <div class="mb-6">
+          <HerbBulletinSignup />
+        </div>
+        <a
+          href="/fresh-herbs"
+          class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 border border-forest-700 text-forest-700 text-sm font-medium rounded-[--radius-card] hover:bg-forest-700 hover:text-white transition-colors"
+        >
+          See the harvest calendar
+        </a>
+      </div>
+    ) : (
+      <div class="rounded-[--radius-card] border border-dashed border-sage-200 bg-white/60 px-6 py-12 text-center">
+        <p class="text-earth-500 mb-4">
+          Nothing in {category.label.toLowerCase()} right now &mdash; check back
+          as the season turns.
+        </p>
+        <a
+          href="/shop"
+          class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 bg-forest-700 text-white text-sm font-medium rounded-[--radius-card] hover:bg-forest-900 transition-colors"
+        >
+          Browse everything
+        </a>
+      </div>
+    )}
+  </section>
+</BaseLayout>

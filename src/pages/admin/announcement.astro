@@ -1,0 +1,127 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { guardPage } from '@/lib/auth';
+import { ANNOUNCEMENT_MAX, readAnnouncement } from '@/lib/announcement';
+
+const denied = guardPage(Astro);
+if (denied) return denied;
+
+const announcement = await readAnnouncement();
+---
+
+<AdminLayout title="Announcement">
+  <div class="max-w-2xl">
+    <h1 class="font-display text-3xl font-bold text-forest-900 mb-2">
+      Announcement banner
+    </h1>
+    <p class="text-earth-500 mb-8 text-sm">
+      The strip across the top of every page. Clear the message or untick
+      &ldquo;Show the banner&rdquo; to hide it.
+    </p>
+
+    <form id="announcement-form" class="space-y-6">
+      <div>
+        <div class="flex items-baseline justify-between mb-2">
+          <label for="message" class="block text-sm font-medium text-forest-900">
+            Message
+          </label>
+          <span id="message-count" class="text-xs text-earth-500 tabular-nums" aria-live="polite">
+            0 / {ANNOUNCEMENT_MAX}
+          </span>
+        </div>
+        <textarea
+          id="message"
+          rows="3"
+          maxlength={ANNOUNCEMENT_MAX}
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 focus:border-forest-500 transition-colors resize-y"
+        >{announcement.message}</textarea>
+      </div>
+
+      <label class="flex items-center gap-3 text-sm text-forest-900">
+        <input
+          type="checkbox"
+          id="enabled"
+          checked={announcement.enabled}
+          class="w-5 h-5 accent-forest-700"
+        />
+        Show the banner on the site
+      </label>
+
+      <div class="flex items-center gap-4">
+        <button
+          type="submit"
+          class="min-h-[44px] px-8 py-3 bg-barn-500 text-white font-medium rounded-[--radius-card] hover:bg-barn-700 transition-colors"
+        >
+          Save
+        </button>
+        <p id="status" class="text-sm" role="status" aria-live="polite">
+          {announcement.updatedAt
+            ? `Last updated ${new Date(announcement.updatedAt).toLocaleString()}`
+            : 'Never edited — showing the built-in default.'}
+        </p>
+      </div>
+    </form>
+
+    <div class="mt-10 pt-8 border-t border-sage-200">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-earth-500 mb-3">
+        Preview
+      </h2>
+      <div class="bg-gold-500 text-black text-center text-sm px-4 py-3 rounded-[--radius-card]">
+        <span id="preview-text" class="text-black/50">Nothing set</span>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  const form = document.getElementById('announcement-form') as HTMLFormElement;
+  const messageEl = document.getElementById('message') as HTMLTextAreaElement;
+  const enabledEl = document.getElementById('enabled') as HTMLInputElement;
+  const countEl = document.getElementById('message-count')!;
+  const statusEl = document.getElementById('status')!;
+  const previewText = document.getElementById('preview-text')!;
+  const max = messageEl.maxLength;
+
+  function setStatus(text: string, tone: 'ok' | 'error' | 'busy') {
+    statusEl.textContent = text;
+    statusEl.className = `text-sm ${
+      tone === 'ok' ? 'text-forest-700' : tone === 'error' ? 'text-barn-700' : 'text-earth-500'
+    }`;
+  }
+
+  function refresh() {
+    const value = messageEl.value;
+    countEl.textContent = `${value.length} / ${max}`;
+    previewText.textContent = value.trim() || 'Nothing set';
+    previewText.className = value.trim() ? '' : 'text-black/50';
+  }
+
+  messageEl.addEventListener('input', refresh);
+  refresh();
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setStatus('Saving…', 'busy');
+
+    try {
+      const res = await fetch('/api/announcement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: messageEl.value,
+          enabled: enabledEl.checked,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus(data.error ?? 'Could not save.', 'error');
+        return;
+      }
+      setStatus('Saved — live now.', 'ok');
+    } catch {
+      setStatus('Could not reach the server.', 'error');
+    }
+  });
+</script>

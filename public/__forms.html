@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Form definitions</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body>
+    <!--
+      Netlify detects forms by scanning static HTML at deploy time. The pages
+      that actually render these forms are server-rendered, so Netlify would
+      never see them. This file exists purely so the form definitions are
+      present in the deploy. Field names must stay in sync with:
+        - src/pages/contact.astro
+        - src/components/global/NewsletterSignup.astro
+        - src/components/herbs/HerbBulletinSignup.astro
+      It is not linked from anywhere and is excluded from search.
+    -->
+    <form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="contact" />
+      <input name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <textarea name="message"></textarea>
+    </form>
+
+    <form name="newsletter" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="newsletter" />
+      <input type="email" name="email" />
+    </form>
+
+    <form name="herb-bulletin" data-netlify="true" hidden>
+      <input type="hidden" name="form-name" value="herb-bulletin" />
+      <input type="email" name="email" />
+    </form>
+  </body>
+</html>

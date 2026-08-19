@@ -1,0 +1,111 @@
+---
+import { SITE } from '@/lib/constants';
+import '@/styles/global.css';
+
+interface Props {
+  title: string;
+  /** The login page has no nav and no sign-out. */
+  bare?: boolean;
+}
+
+const { title, bare = false } = Astro.props;
+
+const tabs = [
+  { label: 'Products', href: '/admin/products' },
+  { label: 'Categories', href: '/admin/categories' },
+  { label: 'Announcement', href: '/admin/announcement' },
+];
+
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | {SITE.name} Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="min-h-screen flex flex-col bg-earth-50">
+    <header class="bg-forest-900 text-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <a href="/admin" class="font-display font-bold text-lg">
+            {SITE.name} <span class="text-gold-300 font-normal">Admin</span>
+          </a>
+          {!bare && (
+            <div class="flex items-center gap-3">
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener"
+                class="text-sm text-forest-200 hover:text-white transition-colors"
+              >
+                View site
+              </a>
+              <button
+                type="button"
+                id="sign-out"
+                class="min-h-[40px] px-4 text-sm font-medium bg-forest-700 hover:bg-forest-500 rounded-[--radius-card] transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {!bare && (
+        <nav aria-label="Admin sections" class="border-t border-forest-700">
+          <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ul class="flex gap-1 -mb-px" role="list">
+              {tabs.map((tab) => {
+                const active = path.startsWith(tab.href);
+                return (
+                  <li>
+                    <a
+                      href={tab.href}
+                      aria-current={active ? 'page' : undefined}
+                      class={`inline-flex items-center h-11 px-4 text-sm font-medium border-b-2 transition-colors ${
+                        active
+                          ? 'border-gold-500 text-white'
+                          : 'border-transparent text-forest-200 hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </nav>
+      )}
+    </header>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <slot />
+    </main>
+
+    <footer class="py-6 text-center text-xs text-earth-500">
+      Changes here go live immediately — no rebuild, no deploy.
+    </footer>
+
+    {!bare && (
+      <script>
+        document.getElementById('sign-out')?.addEventListener('click', async () => {
+          await fetch('/api/admin/login', { method: 'DELETE' });
+          window.location.href = '/admin/login';
+        });
+      </script>
+    )}
+  </body>
+</html>

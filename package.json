@@ -16,5 +16,8 @@
     "astro": "^6.1.5",
     "stripe": "^22.0.1",
     "tailwindcss": "^4.2.2"
+  },
+  "overrides": {
+    "vite": "^7"
   }
 }

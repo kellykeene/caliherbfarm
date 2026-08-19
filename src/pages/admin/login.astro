@@ -1,0 +1,92 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { getAuthConfig, isLoggedIn } from '@/lib/auth';
+
+if (isLoggedIn(Astro.cookies)) {
+  return Astro.redirect('/admin', 302);
+}
+
+const configured = getAuthConfig() !== null;
+const next = Astro.url.searchParams.get('next') ?? '/admin';
+// Only ever bounce to a path on this site.
+const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/admin';
+---
+
+<AdminLayout title="Sign in" bare>
+  <div class="max-w-sm mx-auto">
+    <h1 class="font-display text-2xl font-bold text-forest-900 mb-2">Sign in</h1>
+    <p class="text-earth-500 text-sm mb-8">
+      This area manages the live storefront.
+    </p>
+
+    {!configured && (
+      <div class="mb-6 rounded-[--radius-card] border border-barn-100 bg-barn-50 px-4 py-3 text-sm text-barn-900">
+        <p class="font-medium mb-1">Admin is not set up yet.</p>
+        <p>
+          Run <code class="font-mono">node scripts/hash-password.mjs</code> and add
+          <code class="font-mono">ADMIN_PASSWORD_HASH</code> and
+          <code class="font-mono">ADMIN_SESSION_SECRET</code> to your environment.
+        </p>
+      </div>
+    )}
+
+    <form id="login-form" class="space-y-4">
+      <input type="hidden" id="next" value={safeNext} />
+      <div>
+        <label for="password" class="block text-sm font-medium text-forest-900 mb-2">
+          Password
+        </label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          autocomplete="current-password"
+          disabled={!configured}
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 text-forest-900 focus:border-forest-500 transition-colors disabled:opacity-50"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={!configured}
+        class="w-full min-h-[44px] px-6 py-3 bg-forest-700 text-white font-medium rounded-[--radius-card] hover:bg-forest-900 transition-colors disabled:opacity-50"
+      >
+        Sign in
+      </button>
+      <p id="status" class="text-sm text-barn-700 min-h-[20px]" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  const form = document.getElementById('login-form') as HTMLFormElement;
+  const password = document.getElementById('password') as HTMLInputElement;
+  const status = document.getElementById('status')!;
+  const next = (document.getElementById('next') as HTMLInputElement).value;
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    status.textContent = 'Checking…';
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password.value }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        status.textContent = data.error ?? 'Could not sign in.';
+        password.value = '';
+        password.focus();
+        return;
+      }
+      window.location.href = next;
+    } catch {
+      status.textContent = 'Could not reach the server.';
+    }
+  });
+</script>

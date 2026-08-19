@@ -1,7 +1,7 @@
 ---
 title: "Peppermint Tea"
 description: "Bright and refreshing single-herb peppermint tea for digestive comfort and a clear mind. Farm-dried for peak flavor."
-category: "teas"
+category: "tea-blends"
 price: 1000
 priceDisplay: "from $10.00"
 image: "/images/products/peppermint-tea.jpg"

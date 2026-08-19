@@ -1,0 +1,171 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
+import { SITE, CONTACT_MESSAGE_MAX } from '@/lib/constants';
+
+// This page is prerendered, so the ?submitted=true flag Netlify Forms sends
+// back can only be read in the browser — see the script at the bottom.
+---
+
+<BaseLayout
+  title="Contact"
+  description="Get in touch with Cali Herb Farm — questions about orders, wholesale, or the herbs we grow."
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-right">
+    <Breadcrumbs items={[{ label: 'Contact', href: '/contact' }]} />
+  </div>
+
+  <section
+    aria-labelledby="contact-heading"
+    class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20"
+  >
+    <h1
+      id="contact-heading"
+      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-4 text-right"
+    >
+      Contact
+    </h1>
+    <p class="text-lg text-earth-500 mb-10">
+      Questions about an order, wholesale, or something growing in the field?
+      Send a note and we will get back to you. You can also reach us directly at
+      <a
+        href={`mailto:${SITE.email}`}
+        class="text-forest-700 underline underline-offset-2 hover:text-forest-900"
+        >{SITE.email}</a
+      >.
+    </p>
+
+    <div
+      id="contact-success"
+      role="status"
+      hidden
+      class="mb-8 rounded-[--radius-card] border border-forest-200 bg-forest-50 px-5 py-4"
+    >
+      <p class="font-medium text-forest-900">Thank you &mdash; your message is on its way.</p>
+      <p class="text-sm text-forest-900/70 mt-1">
+        We read everything that comes in and usually reply within a few days.
+      </p>
+    </div>
+
+    <form
+      name="contact"
+      method="POST"
+      action="/contact?submitted=true"
+      data-netlify="true"
+      data-netlify-honeypot="bot-field"
+      class="space-y-6"
+    >
+      <input type="hidden" name="form-name" value="contact" />
+
+      {/* Spam trap: hidden from people, tempting to bots. */}
+      <p class="hidden">
+        <label>
+          Do not fill this in
+          <input name="bot-field" tabindex="-1" autocomplete="off" />
+        </label>
+      </p>
+
+      <div>
+        <label for="contact-name" class="block text-sm font-medium text-forest-900 mb-2">
+          Your name
+        </label>
+        <input
+          type="text"
+          id="contact-name"
+          name="name"
+          required
+          autocomplete="name"
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 text-forest-900 placeholder:text-earth-500 focus:border-forest-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label for="contact-email" class="block text-sm font-medium text-forest-900 mb-2">
+          Email address
+        </label>
+        <input
+          type="email"
+          id="contact-email"
+          name="email"
+          required
+          autocomplete="email"
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 text-forest-900 placeholder:text-earth-500 focus:border-forest-500 transition-colors"
+        />
+        <p class="text-xs text-earth-500 mt-2">
+          So we can write back. We will not add you to any list.
+        </p>
+      </div>
+
+      <div>
+        <div class="flex items-baseline justify-between mb-2">
+          <label for="contact-message" class="block text-sm font-medium text-forest-900">
+            Message
+          </label>
+          <span
+            id="message-count"
+            class="text-xs text-earth-500 tabular-nums"
+            aria-live="polite"
+          >
+            0 / {CONTACT_MESSAGE_MAX}
+          </span>
+        </div>
+        <textarea
+          id="contact-message"
+          name="message"
+          rows="7"
+          required
+          maxlength={CONTACT_MESSAGE_MAX}
+          aria-describedby="message-hint"
+          placeholder="How can we help?"
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 text-forest-900 placeholder:text-earth-500 focus:border-forest-500 transition-colors resize-y"
+        ></textarea>
+        <p id="message-hint" class="text-xs text-earth-500 mt-2">
+          Up to {CONTACT_MESSAGE_MAX} characters.
+        </p>
+      </div>
+
+      <button
+        type="submit"
+        class="inline-flex items-center justify-center min-h-[44px] px-8 py-3 bg-barn-500 text-white font-medium rounded-[--radius-card] hover:bg-barn-700 transition-colors"
+      >
+        Send message
+      </button>
+    </form>
+  </section>
+</BaseLayout>
+
+<script>
+  function initContactForm() {
+    // Netlify Forms redirects back to /contact?submitted=true after a send.
+    const success = document.getElementById('contact-success');
+    if (success) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('submitted') === 'true') {
+        success.hidden = false;
+        success.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+
+    const message = document.getElementById('contact-message') as HTMLTextAreaElement | null;
+    const count = document.getElementById('message-count');
+    if (!message || !count) return;
+
+    const max = message.maxLength;
+
+    function update() {
+      const used = message!.value.length;
+      count!.textContent = `${used} / ${max}`;
+      // Warn as they approach the cap rather than only cutting them off at it.
+      count!.className =
+        used > max * 0.9
+          ? 'text-xs text-barn-700 font-medium tabular-nums'
+          : 'text-xs text-earth-500 tabular-nums';
+    }
+
+    message.addEventListener('input', update);
+    update();
+  }
+
+  initContactForm();
+  document.addEventListener('astro:after-swap', initContactForm);
+</script>

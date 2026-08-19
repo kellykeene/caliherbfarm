@@ -1,25 +1,45 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Hero from '@/components/home/Hero.astro';
-import CategoryBlocks from '@/components/home/CategoryBlocks.astro';
+import CategorySection from '@/components/shop/CategorySection.astro';
 import NewsletterSignup from '@/components/global/NewsletterSignup.astro';
 import InstagramFeed from '@/components/home/InstagramFeed.astro';
+import { getHomeCategories, getStorefrontCatalog } from '@/lib/catalog';
 import { getWebSiteSchema } from '@/lib/schema';
+
+// Which categories appear here, and in what order, is set in the admin.
+const [homeCategories, catalog] = await Promise.all([
+  getHomeCategories(),
+  getStorefrontCatalog(),
+]);
 ---
 
-<BaseLayout
-  title="Home"
-  announcement="Spring CSA boxes are now available! Order yours before the equinox."
-  schema={getWebSiteSchema()}
->
+<BaseLayout title="Home" schema={getWebSiteSchema()}>
   <Hero />
-  <CategoryBlocks />
+
+  {homeCategories.map((category, i) => (
+    <CategorySection
+      slug={category.slug}
+      label={category.label}
+      blurb={category.blurb}
+      limit={8}
+      tinted={i % 2 === 1}
+      catalog={catalog}
+    />
+  ))}
+
+  <!-- Shop All -->
+  <section class="pb-16 sm:pb-20 text-center">
+    <a
+      href="/shop"
+      class="inline-flex items-center justify-center min-h-[44px] px-8 py-3 bg-barn-500 text-white font-medium rounded-[--radius-card] hover:bg-barn-700 transition-colors"
+    >
+      Shop All
+    </a>
+  </section>
 
   <!-- Newsletter Section -->
-  <section
-    aria-labelledby="newsletter-heading"
-    class="py-16 sm:py-20"
-  >
+  <section aria-labelledby="newsletter-heading" class="bg-earth-50 py-16 sm:py-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <h2
         id="newsletter-heading"

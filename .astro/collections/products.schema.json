@@ -11,13 +11,14 @@
     "category": {
       "type": "string",
       "enum": [
+        "whole-dried-herbs",
+        "tea-blends",
+        "fresh-herbs",
+        "face-body",
         "tinctures-formulas",
         "tinctures-singles",
-        "teas",
-        "topicals",
         "culinary",
-        "csa",
-        "fresh-herbs"
+        "csa"
       ]
     },
     "price": {
@@ -53,6 +54,9 @@
           "inStock": {
             "default": true,
             "type": "boolean"
+          },
+          "stripeNickname": {
+            "type": "string"
           }
         },
         "required": [
@@ -85,6 +89,9 @@
             },
             "stripePriceId": {
               "type": "string"
+            },
+            "stripeNickname": {
+              "type": "string"
             }
           },
           "required": [
@@ -100,6 +107,9 @@
             },
             "stripePriceId": {
               "type": "string"
+            },
+            "stripeNickname": {
+              "type": "string"
             }
           },
           "required": [
@@ -114,6 +124,9 @@
               "type": "number"
             },
             "stripePriceId": {
+              "type": "string"
+            },
+            "stripeNickname": {
               "type": "string"
             }
           },

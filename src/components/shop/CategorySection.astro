@@ -1,0 +1,104 @@
+---
+import ProductGrid from '@/components/product/ProductGrid.astro';
+import { categoryHref } from '@/lib/constants';
+import {
+  getStorefrontCatalog,
+  productsIn,
+  type CatalogProduct,
+} from '@/lib/catalog';
+
+interface Props {
+  slug: string;
+  label: string;
+  blurb?: string;
+  /** Cap the number of products shown; omit to show the whole category. */
+  limit?: number;
+  /** Heading level so the section fits the page outline it lands in. */
+  as?: 'h2' | 'h3';
+  /** Alternating background, the way Meadowland separates its rows. */
+  tinted?: boolean;
+  /** Pass a pre-fetched catalog to avoid re-reading it per section. */
+  catalog?: CatalogProduct[];
+}
+
+const {
+  slug,
+  label,
+  blurb,
+  limit,
+  as = 'h2',
+  tinted = false,
+  catalog,
+} = Astro.props;
+
+const all = catalog ?? (await getStorefrontCatalog());
+const inCategory = productsIn(all, slug);
+
+const shown = limit ? inCategory.slice(0, limit) : inCategory;
+const hasMore = shown.length < inCategory.length;
+const href = categoryHref(slug);
+const headingId = `category-${slug}`;
+const Heading = as;
+---
+
+<section
+  aria-labelledby={headingId}
+  id={slug}
+  class={`py-14 sm:py-16 scroll-mt-24 ${tinted ? 'bg-earth-50' : ''}`}
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+      <div class="max-w-2xl">
+        <Heading
+          id={headingId}
+          class="font-display text-2xl sm:text-3xl font-bold text-forest-900"
+        >
+          {label}
+        </Heading>
+        {blurb && <p class="text-earth-500 mt-2 leading-relaxed">{blurb}</p>}
+      </div>
+      <a
+        href={href}
+        class="inline-flex items-center gap-1 min-h-[44px] text-sm font-medium text-forest-700 hover:text-forest-900 transition-colors"
+      >
+        Shop all {label}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </div>
+
+    {shown.length > 0 ? (
+      <ProductGrid products={shown} id={`grid-${slug}`} label={label} />
+    ) : (
+      <div class="rounded-[--radius-card] border border-dashed border-sage-200 bg-white/60 px-6 py-10 text-center">
+        <p class="text-earth-500">
+          Nothing in this category right now — check back as the season turns.
+        </p>
+      </div>
+    )}
+
+    {hasMore && (
+      <div class="mt-8 text-center">
+        <a
+          href={href}
+          class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 border border-forest-700 text-forest-700 text-sm font-medium rounded-[--radius-card] hover:bg-forest-700 hover:text-white transition-colors"
+        >
+          View all {inCategory.length} {label.toLowerCase()}
+        </a>
+      </div>
+    )}
+  </div>
+</section>

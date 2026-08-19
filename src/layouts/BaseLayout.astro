@@ -15,7 +15,8 @@ interface Props {
   description?: string;
   schema?: Record<string, unknown> | Record<string, unknown>[];
   ogImage?: string;
-  announcement?: string;
+  /** Keep this page out of search results (admin pages). */
+  noindex?: boolean;
 }
 
 const {
@@ -23,7 +24,7 @@ const {
   description = SITE.description,
   schema,
   ogImage = '/og-image.jpg',
-  announcement,
+  noindex = false,
 } = Astro.props;
 
 const pageTitle = title === 'Home' ? SITE.name : `${title} | ${SITE.name}`;
@@ -40,6 +41,7 @@ const canonicalUrl = new URL(Astro.url.pathname, SITE.url);
 
     <title>{pageTitle}</title>
     <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -77,7 +79,7 @@ const canonicalUrl = new URL(Astro.url.pathname, SITE.url);
   </head>
   <body class="min-h-screen flex flex-col">
     <SkipToContent />
-    {announcement && <AnnouncementBanner message={announcement} />}
+    <AnnouncementBanner />
     <Header />
     <main id="main-content" class="flex-1">
       <slot />

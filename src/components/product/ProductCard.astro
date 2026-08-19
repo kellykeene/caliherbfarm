@@ -1,4 +1,6 @@
 ---
+import { productHref } from '@/lib/constants';
+
 interface Props {
   slug: string;
   title: string;
@@ -30,6 +32,8 @@ const {
   slidingScale,
 } = Astro.props;
 
+const href = productHref(slug);
+
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -41,7 +45,7 @@ function formatPrice(cents: number) {
 >
   <!-- Product Image -->
   <div class="relative group">
-    <a href={`/shop/${slug}`} class="block aspect-square bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden">
+    <a href={href} class="block aspect-square bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden">
       <div class="w-full h-full flex items-center justify-center text-sage-400">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -68,7 +72,7 @@ function formatPrice(cents: number) {
         data-qv-title={title}
         data-qv-price={slidingScale ? `from ${formatPrice(slidingScale.low.price)}` : priceDisplay}
         data-qv-description={description}
-        data-qv-href={`/shop/${slug}`}
+        data-qv-href={href}
         class="absolute bottom-2 left-2 right-2 min-h-[40px] bg-white/90 backdrop-blur-sm text-forest-700 text-sm font-medium rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:bg-white"
       >
         Quick View
@@ -78,7 +82,7 @@ function formatPrice(cents: number) {
 
   <!-- Product Info -->
   <div class="p-4 flex flex-col flex-1">
-    <a href={`/shop/${slug}`} class="hover:text-forest-700 transition-colors">
+    <a href={href} class="hover:text-forest-700 transition-colors">
       <h3 class="font-display font-semibold text-forest-900 line-clamp-2 mb-1">
         {title}
       </h3>
@@ -101,7 +105,7 @@ function formatPrice(cents: number) {
       <!-- Action -->
       {inStock ? (
         <a
-          href={`/shop/${slug}`}
+          href={href}
           class="inline-flex items-center justify-center w-full min-h-[44px] px-4 py-2.5 bg-forest-700 text-white text-sm font-medium rounded-[--radius-card] hover:bg-forest-900 transition-colors"
         >
           {isSubscription ? 'View Options' : 'View Product'}
