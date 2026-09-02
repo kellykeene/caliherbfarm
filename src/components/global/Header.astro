@@ -11,7 +11,7 @@ const isHome = Astro.url.pathname === '/';
 
 <header class="sticky top-0 z-40 bg-plum-600">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center h-28 md:gap-6 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-4">
+    <div class="flex items-center h-28 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-4">
       <!-- Logo -->
       <a href="/" class:list={["flex shrink-0 items-center justify-self-start", isHome && "lg:hidden"]} aria-label="Cali Herb Farm — home">
         <img
@@ -24,7 +24,7 @@ const isHome = Astro.url.pathname === '/';
       </a>
 
       <!-- Desktop Navigation -->
-      <nav aria-label="Main navigation" class="hidden md:block xl:col-start-2 xl:justify-self-center">
+      <nav aria-label="Main navigation" class="hidden xl:block xl:col-start-2 xl:justify-self-center">
         <ul class="flex items-center gap-1" role="list">
           {NAV_LINKS.map((link) => (
             <li class="relative group">
@@ -111,7 +111,7 @@ const isHome = Astro.url.pathname === '/';
           aria-label="Open menu"
           aria-expanded="false"
           aria-controls="mobile-menu"
-          class="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
+          class="xl:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
         >
           <svg
             id="menu-icon-open"
@@ -155,7 +155,7 @@ const isHome = Astro.url.pathname === '/';
   <!-- Mobile Navigation -->
   <div
     id="mobile-menu"
-    class="md:hidden hidden border-t border-sage-200 bg-cream"
+    class="xl:hidden hidden border-t border-sage-200 bg-cream"
     aria-hidden="true"
   >
     <nav aria-label="Mobile navigation" class="px-4 py-4 space-y-1">
@@ -186,65 +186,78 @@ const isHome = Astro.url.pathname === '/';
 </header>
 
 <script>
-  const toggle = document.getElementById('mobile-menu-toggle');
-  const menu = document.getElementById('mobile-menu');
-  const iconOpen = document.getElementById('menu-icon-open');
-  const iconClose = document.getElementById('menu-icon-close');
+  // ClientRouter swaps the DOM on navigation without re-running module
+  // scripts, so element listeners must be re-bound per page. astro:page-load
+  // fires on the initial load and after every client-side navigation.
+  let closeCurrentMenu: () => void = () => {};
 
-  function openMenu() {
-    toggle?.setAttribute('aria-expanded', 'true');
-    toggle?.setAttribute('aria-label', 'Close menu');
-    menu?.classList.remove('hidden');
-    menu?.setAttribute('aria-hidden', 'false');
-    iconOpen?.classList.add('hidden');
-    iconClose?.classList.remove('hidden');
+  function setupMobileMenu() {
+    const toggle = document.getElementById('mobile-menu-toggle');
+    const menu = document.getElementById('mobile-menu');
+    const iconOpen = document.getElementById('menu-icon-open');
+    const iconClose = document.getElementById('menu-icon-close');
+    if (!toggle || !menu) return;
 
-    // Focus first link in menu
-    const firstLink = menu?.querySelector('a');
-    firstLink?.focus();
-  }
+    function openMenu() {
+      toggle!.setAttribute('aria-expanded', 'true');
+      toggle!.setAttribute('aria-label', 'Close menu');
+      menu!.classList.remove('hidden');
+      menu!.setAttribute('aria-hidden', 'false');
+      iconOpen?.classList.add('hidden');
+      iconClose?.classList.remove('hidden');
 
-  function closeMenu() {
-    toggle?.setAttribute('aria-expanded', 'false');
-    toggle?.setAttribute('aria-label', 'Open menu');
-    menu?.classList.add('hidden');
-    menu?.setAttribute('aria-hidden', 'true');
-    iconOpen?.classList.remove('hidden');
-    iconClose?.classList.add('hidden');
-    toggle?.focus();
-  }
-
-  toggle?.addEventListener('click', () => {
-    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
-    if (isOpen) {
-      closeMenu();
-    } else {
-      openMenu();
+      // Focus first link in menu
+      const firstLink = menu!.querySelector('a');
+      firstLink?.focus();
     }
-  });
 
-  // Close on Escape
+    function closeMenu() {
+      toggle!.setAttribute('aria-expanded', 'false');
+      toggle!.setAttribute('aria-label', 'Open menu');
+      menu!.classList.add('hidden');
+      menu!.setAttribute('aria-hidden', 'true');
+      iconOpen?.classList.remove('hidden');
+      iconClose?.classList.add('hidden');
+      toggle!.focus();
+    }
+
+    closeCurrentMenu = closeMenu;
+
+    toggle.addEventListener('click', () => {
+      const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    // Focus trap within mobile menu
+    menu.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = menu.querySelectorAll<HTMLElement>('a, button');
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        toggle.focus();
+      }
+    });
+  }
+
+  // Bound once: document survives view transitions, so re-binding here would
+  // stack a duplicate handler on every navigation.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
-      closeMenu();
-    }
+    if (e.key !== 'Escape') return;
+    const toggle = document.getElementById('mobile-menu-toggle');
+    if (toggle?.getAttribute('aria-expanded') === 'true') closeCurrentMenu();
   });
 
-  // Focus trap within mobile menu
-  menu?.addEventListener('keydown', (e) => {
-    if (e.key !== 'Tab') return;
-    const focusable = menu.querySelectorAll<HTMLElement>('a, button');
-    if (focusable.length === 0) return;
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      toggle?.focus();
-    }
-  });
+  document.addEventListener('astro:page-load', setupMobileMenu);
 </script>
