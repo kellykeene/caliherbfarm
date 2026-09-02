@@ -5,67 +5,72 @@ import { buildNavLinks, getCategories } from '@/lib/catalog';
 const NAV_LINKS = buildNavLinks(await getCategories());
 ---
 
-<header class="sticky top-0 z-40 bg-plum-600 overflow-visible">
+<header class="sticky top-0 z-40 bg-plum-600">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between h-16 sm:h-20">
-      <!-- Logo -->
-      <a href="/" class="relative z-50 flex items-center gap-2 text-forest-700 hover:text-forest-900 transition-colors">
-        <img
-          src="/cali-herb-farm-logo.png"
-          alt="Cali Herb Farm"
-          class="h-36 sm:h-48 w-auto translate-y-[35px] sm:translate-y-[75px] drop-shadow-lg"
-        />
-      </a>
+    <div class="flex items-center justify-between h-28">
+      <!-- Logo + primary nav, kept adjacent -->
+      <div class="flex items-center gap-6 lg:gap-10">
+        <!-- Logo -->
+        <a href="/" class="flex shrink-0 items-center" aria-label="Cali Herb Farm — home">
+          <img
+            src="/cali-herb-farm-logo.png"
+            alt="Cali Herb Farm"
+            width="2061"
+            height="786"
+            class="h-24 w-auto drop-shadow-sm"
+          />
+        </a>
 
-      <!-- Desktop Navigation -->
-      <nav aria-label="Main navigation" class="hidden md:block">
-        <ul class="flex items-center gap-1" role="list">
-          {NAV_LINKS.map((link) => (
-            <li class="relative group">
-              <a
-                href={link.href}
-                class="inline-flex items-center gap-1 px-3 py-2 text-lg font-medium text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
-              >
-                {link.label}
-                {'children' in link && link.children && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                    class="transition-transform group-hover:rotate-180"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                )}
-              </a>
-              {'children' in link && link.children && (
-                <ul
-                  class="absolute left-0 top-full mt-1 w-48 bg-cream border border-sage-200 rounded-[--radius-card] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all"
-                  role="list"
+        <!-- Desktop Navigation -->
+        <nav aria-label="Main navigation" class="hidden md:block">
+          <ul class="flex items-center gap-1" role="list">
+            {NAV_LINKS.map((link) => (
+              <li class="relative group">
+                <a
+                  href={link.href}
+                  class="inline-flex items-center gap-1 px-3 py-2 text-lg font-medium text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
                 >
-                  {link.children.map((child) => (
-                    <li>
-                      <a
-                        href={child.href}
-                        class="block px-4 py-2.5 text-sm text-forest-700 hover:text-forest-900 hover:bg-forest-50 first:rounded-t-[--radius-card] last:rounded-b-[--radius-card] transition-colors"
-                      >
-                        {child.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
+                  {link.label}
+                  {'children' in link && link.children && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                      class="transition-transform group-hover:rotate-180"
+                    >
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  )}
+                </a>
+                {'children' in link && link.children && (
+                  <ul
+                    class="absolute left-0 top-full mt-1 w-48 bg-cream border border-sage-200 rounded-[--radius-card] shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible focus-within:opacity-100 focus-within:visible transition-all"
+                    role="list"
+                  >
+                    {link.children.map((child) => (
+                      <li>
+                        <a
+                          href={child.href}
+                          class="block px-4 py-2.5 text-sm text-forest-700 hover:text-forest-900 hover:bg-forest-50 first:rounded-t-[--radius-card] last:rounded-b-[--radius-card] transition-colors"
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
 
       <!-- Right side: Cart + Mobile menu -->
       <div class="flex items-center gap-2">
@@ -147,7 +152,7 @@ const NAV_LINKS = buildNavLinks(await getCategories());
   </div>
 
   <!-- Logo-style border: red band with white inner lines -->
-  <div aria-hidden="true" class="h-2 bg-barn-500 border-y border-white/60"></div>
+  <div aria-hidden="true" class="h-1 bg-barn-500 border-y border-white/60"></div>
 
   <!-- Mobile Navigation -->
   <div
