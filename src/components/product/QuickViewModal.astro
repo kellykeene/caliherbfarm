@@ -54,41 +54,47 @@
 </dialog>
 
 <script>
-  const dialog = document.getElementById('quick-view-dialog') as HTMLDialogElement | null;
-  const qvTitle = document.getElementById('qv-title');
-  const qvPrice = document.getElementById('qv-price');
-  const qvDesc = document.getElementById('qv-description');
-  const qvLink = document.getElementById('qv-view-link') as HTMLAnchorElement | null;
-  const qvClose = document.getElementById('qv-close');
-  const qvCloseSecondary = document.getElementById('qv-close-secondary');
-
   let lastFocusedElement: HTMLElement | null = null;
 
-  // Open from any quick-view trigger
-  document.addEventListener('click', (e) => {
-    const trigger = (e.target as HTMLElement).closest('[data-quick-view]') as HTMLElement | null;
-    if (!trigger || !dialog) return;
-
-    lastFocusedElement = trigger;
-
-    qvTitle!.textContent = trigger.dataset.qvTitle || '';
-    qvPrice!.textContent = trigger.dataset.qvPrice || '';
-    qvDesc!.textContent = trigger.dataset.qvDescription || '';
-    qvLink!.href = trigger.dataset.qvHref || '#';
-
-    dialog.showModal();
-    // Focus the close button when modal opens
-    qvClose?.focus();
-  });
-
   function closeDialog() {
+    const dialog = document.getElementById('quick-view-dialog') as HTMLDialogElement | null;
     dialog?.close();
     // Return focus to the trigger element
     lastFocusedElement?.focus();
   }
 
-  qvClose?.addEventListener('click', closeDialog);
-  qvCloseSecondary?.addEventListener('click', closeDialog);
+  // Delegated, so it survives navigation and is bound once — document is not
+  // replaced by ClientRouter, so re-binding here would stack duplicates.
+  // Elements are looked up at event time because the DOM *is* replaced.
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement).closest('[data-quick-view]') as HTMLElement | null;
+    if (!trigger) return;
+
+    const dialog = document.getElementById('quick-view-dialog') as HTMLDialogElement | null;
+    if (!dialog) return;
+
+    lastFocusedElement = trigger;
+
+    const qvTitle = document.getElementById('qv-title');
+    const qvPrice = document.getElementById('qv-price');
+    const qvDesc = document.getElementById('qv-description');
+    const qvLink = document.getElementById('qv-view-link') as HTMLAnchorElement | null;
+
+    if (qvTitle) qvTitle.textContent = trigger.dataset.qvTitle || '';
+    if (qvPrice) qvPrice.textContent = trigger.dataset.qvPrice || '';
+    if (qvDesc) qvDesc.textContent = trigger.dataset.qvDescription || '';
+    if (qvLink) qvLink.href = trigger.dataset.qvHref || '#';
+
+    dialog.showModal();
+    // Focus the close button when modal opens
+    document.getElementById('qv-close')?.focus();
+  });
+
+  // The close buttons are inside the swapped DOM, so they re-bind per page.
+  document.addEventListener('astro:page-load', () => {
+    document.getElementById('qv-close')?.addEventListener('click', closeDialog);
+    document.getElementById('qv-close-secondary')?.addEventListener('click', closeDialog);
+  });
 
   // Native <dialog> already traps focus and closes on Escape
 </script>

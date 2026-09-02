@@ -252,67 +252,77 @@ const schema = getProductSchema({
 <script>
   import { addToCart, getCartCount } from '@/lib/cart';
 
-  let quantity = 1;
-  const qtyDisplay = document.getElementById('qty-display');
-  const btnDecrease = document.getElementById('qty-decrease');
-  const btnIncrease = document.getElementById('qty-increase');
-  const btnAddToCart = document.getElementById('add-to-cart') as HTMLButtonElement | null;
+  function setupProductPage() {
+    const qtyDisplay = document.getElementById('qty-display');
+    const btnDecrease = document.getElementById('qty-decrease');
+    const btnIncrease = document.getElementById('qty-increase');
+    const btnAddToCart = document.getElementById('add-to-cart') as HTMLButtonElement | null;
+    if (!btnAddToCart) return;
 
-  btnDecrease?.addEventListener('click', () => {
-    if (quantity > 1) {
-      quantity--;
-      if (qtyDisplay) qtyDisplay.textContent = String(quantity);
-    }
-  });
-
-  btnIncrease?.addEventListener('click', () => {
-    quantity++;
+    // Declared per page, not per module: module scope persists across
+    // client-side navigation, so a quantity set on one product would
+    // otherwise carry over to the next one.
+    let quantity = 1;
     if (qtyDisplay) qtyDisplay.textContent = String(quantity);
-  });
 
-  btnAddToCart?.addEventListener('click', () => {
-    const slug = btnAddToCart.dataset.slug!;
-    const title = btnAddToCart.dataset.title!;
-    const image = btnAddToCart.dataset.image!;
-    const isSubscription = btnAddToCart.dataset.isSubscription === 'true';
-
-    // Get selected variant or sliding scale tier
-    const selectedRadio = document.querySelector<HTMLInputElement>(
-      'input[name="variant"]:checked, input[name="sliding-scale-tier"]:checked',
-    );
-
-    if (!selectedRadio) return;
-
-    const stripePriceId = selectedRadio.value;
-    const price = Number(selectedRadio.dataset.price);
-    const variant = selectedRadio.dataset.label || selectedRadio.dataset.tier || '';
-
-    addToCart({
-      slug,
-      title,
-      variant,
-      stripePriceId,
-      price,
-      quantity: isSubscription ? 1 : quantity,
-      image,
-      isSubscription,
+    btnDecrease?.addEventListener('click', () => {
+      if (quantity > 1) {
+        quantity--;
+        if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+      }
     });
 
-    // Feedback
-    const original = btnAddToCart.textContent;
-    btnAddToCart.textContent = 'Added!';
-    btnAddToCart.classList.add('bg-sage-600');
-    setTimeout(() => {
-      btnAddToCart.textContent = original;
-      btnAddToCart.classList.remove('bg-sage-600');
-    }, 1500);
+    btnIncrease?.addEventListener('click', () => {
+      quantity++;
+      if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+    });
 
-    // Update cart count in header
-    const countEl = document.getElementById('cart-count');
-    if (countEl) {
-      const count = getCartCount();
-      countEl.textContent = String(count);
-      countEl.classList.remove('hidden');
-    }
-  });
+    btnAddToCart.addEventListener('click', () => {
+      const slug = btnAddToCart.dataset.slug!;
+      const title = btnAddToCart.dataset.title!;
+      const image = btnAddToCart.dataset.image!;
+      const isSubscription = btnAddToCart.dataset.isSubscription === 'true';
+
+      // Get selected variant or sliding scale tier
+      const selectedRadio = document.querySelector<HTMLInputElement>(
+        'input[name="variant"]:checked, input[name="sliding-scale-tier"]:checked',
+      );
+
+      if (!selectedRadio) return;
+
+      const stripePriceId = selectedRadio.value;
+      const price = Number(selectedRadio.dataset.price);
+      const variant = selectedRadio.dataset.label || selectedRadio.dataset.tier || '';
+
+      addToCart({
+        slug,
+        title,
+        variant,
+        stripePriceId,
+        price,
+        quantity: isSubscription ? 1 : quantity,
+        image,
+        isSubscription,
+      });
+
+      // Feedback
+      const original = btnAddToCart.textContent;
+      btnAddToCart.textContent = 'Added!';
+      btnAddToCart.classList.add('bg-sage-600');
+      setTimeout(() => {
+        btnAddToCart.textContent = original;
+        btnAddToCart.classList.remove('bg-sage-600');
+      }, 1500);
+
+      // Update cart count in header
+      const countEl = document.getElementById('cart-count');
+      if (countEl) {
+        const count = getCartCount();
+        countEl.textContent = String(count);
+        countEl.classList.remove('hidden');
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', setupProductPage);
 </script>

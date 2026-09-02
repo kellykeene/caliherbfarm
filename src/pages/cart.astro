@@ -174,7 +174,7 @@ import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
   }
 
   // Checkout button
-  document.getElementById('checkout-btn')?.addEventListener('click', async () => {
+  async function handleCheckout() {
     const cart = getCart();
     if (cart.length === 0) return;
 
@@ -233,9 +233,14 @@ import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
       btn.textContent = 'Checkout failed — try again';
       btn.disabled = false;
     }
-  });
+  }
 
-  // Initial render
-  renderCart();
-  updateHeaderCount();
+  // renderCart/updateHeaderCount resolve their elements at call time, so they
+  // only need re-invoking; the checkout button itself is replaced on
+  // navigation and must be re-bound.
+  document.addEventListener('astro:page-load', () => {
+    document.getElementById('checkout-btn')?.addEventListener('click', handleCheckout);
+    renderCart();
+    updateHeaderCount();
+  });
 </script>
