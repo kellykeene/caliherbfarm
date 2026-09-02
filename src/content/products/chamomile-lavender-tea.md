@@ -1,7 +1,7 @@
 ---
 title: "Chamomile Lavender Tea"
 description: "A soothing herbal tea blend for relaxation and gentle digestive support. All herbs grown on our farm."
-category: "teas"
+category: "tea-blends"
 price: 1200
 priceDisplay: "from $12.00"
 image: "/images/products/chamomile-lavender-tea.jpg"

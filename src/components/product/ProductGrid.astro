@@ -23,16 +23,19 @@ interface Product {
 
 interface Props {
   products: Product[];
+  /** Unique per page — several grids can appear on one page. */
+  id?: string;
+  label?: string;
 }
 
-const { products } = Astro.props;
+const { products, id = 'product-grid', label = 'Products' } = Astro.props;
 ---
 
 <div
-  id="product-grid"
+  id={id}
   class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
   role="list"
-  aria-label="Products"
+  aria-label={label}
 >
   {products.map((product) => (
     <div role="listitem" data-category={product.data.category}>

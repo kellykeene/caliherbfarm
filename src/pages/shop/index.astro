@@ -1,57 +1,71 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
-import CategoryFilter from '@/components/product/CategoryFilter.astro';
-import ProductGrid from '@/components/product/ProductGrid.astro';
-import { getCollection } from 'astro:content';
-import { SITE } from '@/lib/constants';
+import CategoryNav from '@/components/product/CategoryNav.astro';
+import CategorySection from '@/components/shop/CategorySection.astro';
+import { getStorefrontCatalog, getVisibleCategories } from '@/lib/catalog';
+import { SITE, productHref } from '@/lib/constants';
 
-const products = await getCollection('products');
-
-// Sort: featured first, then alphabetical
-const sortedProducts = products.sort((a, b) => {
-  if (a.data.featured && !b.data.featured) return -1;
-  if (!a.data.featured && b.data.featured) return 1;
-  return a.data.title.localeCompare(b.data.title);
-});
+const [categories, products] = await Promise.all([
+  getVisibleCategories(),
+  getStorefrontCatalog(),
+]);
 
 const itemListSchema = {
   '@type': 'ItemList',
   name: 'Cali Herb Farm Products',
-  numberOfItems: sortedProducts.length,
-  itemListElement: sortedProducts.map((p, i) => ({
+  numberOfItems: products.length,
+  itemListElement: products.map((p, i) => ({
     '@type': 'ListItem',
     position: i + 1,
-    url: `${SITE.url}/shop/${p.id}`,
+    url: `${SITE.url}${productHref(p.id)}`,
     name: p.data.title,
   })),
 };
+
+// Only render a section for a category that actually has something in it,
+// so the page never shows a wall of empty shelves.
+const populated = categories.filter((cat) =>
+  products.some((p) => p.data.category === cat.slug),
+);
 ---
 
 <BaseLayout
   title="Shop"
-  description="Shop handcrafted herbal remedies, tinctures, teas, topicals, and CSA subscriptions from Cali Herb Farm."
+  description="Shop whole dried herbs, tea blends, fresh herbs, and face & body care grown and made on our small California herb farm."
   schema={itemListSchema}
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-right">
     <Breadcrumbs items={[{ label: 'Shop', href: '/shop' }]} />
   </div>
 
-  <section aria-labelledby="shop-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+  <section aria-labelledby="shop-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <h1
       id="shop-heading"
-      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-8"
+      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-3 text-right"
     >
       Shop
     </h1>
+    <p class="text-lg text-earth-500 max-w-2xl mb-8">
+      Everything we grow, dry, blend, and make &mdash; in one place.
+    </p>
 
-    <CategoryFilter />
-    <ProductGrid products={sortedProducts} />
-
-    {sortedProducts.length === 0 && (
-      <p class="text-center text-earth-500 py-12">
-        No products available at the moment. Check back soon!
-      </p>
-    )}
+    <CategoryNav />
   </section>
+
+  {populated.map((cat, i) => (
+    <CategorySection
+      slug={cat.slug}
+      label={cat.label}
+      blurb={cat.blurb}
+      tinted={i % 2 === 1}
+      catalog={products}
+    />
+  ))}
+
+  {products.length === 0 && (
+    <p class="text-center text-earth-500 py-12">
+      No products available at the moment. Check back soon!
+    </p>
+  )}
 </BaseLayout>

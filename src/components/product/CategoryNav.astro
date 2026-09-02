@@ -1,0 +1,47 @@
+---
+import { getVisibleCategories } from '@/lib/catalog';
+
+interface Props {
+  /** Slug of the category page currently being viewed, if any. */
+  active?: string;
+}
+
+const { active } = Astro.props;
+const SHOP_CATEGORIES = await getVisibleCategories();
+---
+
+<nav aria-label="Shop categories" class="mb-10">
+  <ul class="flex flex-wrap gap-2" role="list">
+    <li>
+      <a
+        href="/shop"
+        aria-current={active ? undefined : 'page'}
+        class={`inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+          active
+            ? 'bg-white border border-sage-200 text-forest-700 hover:bg-forest-50'
+            : 'bg-forest-700 text-white'
+        }`}
+      >
+        All
+      </a>
+    </li>
+    {SHOP_CATEGORIES.map((cat) => {
+      const isActive = cat.slug === active;
+      return (
+        <li>
+          <a
+            href={`/shop/${cat.slug}`}
+            aria-current={isActive ? 'page' : undefined}
+            class={`inline-flex items-center min-h-[44px] px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+              isActive
+                ? 'bg-forest-700 text-white'
+                : 'bg-white border border-sage-200 text-forest-700 hover:bg-forest-50'
+            }`}
+          >
+            {cat.label}
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</nav>

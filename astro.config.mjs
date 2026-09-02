@@ -4,7 +4,9 @@ import netlify from '@astrojs/netlify';
 
 export default defineConfig({
   site: 'https://caliherbfarm.com',
-  output: 'static',
+  // Server-rendered: the storefront reads live categories, product overrides,
+  // and the announcement from Netlify Blobs on every request.
+  output: 'server',
   adapter: netlify(),
   vite: {
     plugins: [tailwindcss()],

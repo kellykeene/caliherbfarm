@@ -1,0 +1,87 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { guardPage } from '@/lib/auth';
+import { getCatalog, getCategories } from '@/lib/catalog';
+import { readAnnouncement } from '@/lib/announcement';
+import { isStripeConfigured } from '@/lib/stripe';
+
+const denied = guardPage(Astro);
+if (denied) return denied;
+
+const [products, categories, announcement] = await Promise.all([
+  getCatalog(),
+  getCategories(),
+  readAnnouncement(),
+]);
+
+const hiddenProducts = products.filter((p) => p.hidden).length;
+const hiddenCategories = categories.filter((c) => c.hidden).length;
+const stripeReady = isStripeConfigured();
+
+const cards = [
+  {
+    href: '/admin/products',
+    title: 'Products',
+    stat: `${products.length}`,
+    detail:
+      hiddenProducts > 0
+        ? `${hiddenProducts} hidden from the shop`
+        : 'All visible in the shop',
+  },
+  {
+    href: '/admin/categories',
+    title: 'Categories',
+    stat: `${categories.length}`,
+    detail:
+      hiddenCategories > 0
+        ? `${hiddenCategories} hidden from the shop`
+        : 'All visible in the shop',
+  },
+  {
+    href: '/admin/announcement',
+    title: 'Announcement',
+    stat: announcement.enabled ? 'On' : 'Off',
+    detail: announcement.enabled
+      ? announcement.message.slice(0, 60)
+      : 'Banner is hidden',
+  },
+];
+---
+
+<AdminLayout title="Dashboard">
+  <h1 class="font-display text-3xl font-bold text-forest-900 mb-2">Dashboard</h1>
+  <p class="text-earth-500 mb-8">
+    Everything here edits the live site straight away.
+  </p>
+
+  {!stripeReady && (
+    <div class="mb-8 rounded-[--radius-card] border border-gold-300 bg-gold-500/15 px-5 py-4">
+      <p class="font-medium text-forest-900 mb-1">Stripe is not connected.</p>
+      <p class="text-sm text-forest-900/75">
+        You can edit everything except prices. Set
+        <code class="font-mono">STRIPE_SECRET_KEY</code> to enable price changes —
+        the admin creates a new Stripe price and archives the old one so the
+        displayed price and the charged price cannot drift apart.
+      </p>
+    </div>
+  )}
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+    {cards.map((card) => (
+      <a
+        href={card.href}
+        class="block bg-white rounded-[--radius-card] border border-sage-200 p-6 hover:border-forest-500 hover:shadow-sm transition-all"
+      >
+        <p class="text-sm font-medium uppercase tracking-wider text-earth-500 mb-3">
+          {card.title}
+        </p>
+        <p class="font-display text-3xl font-bold text-forest-900 mb-2">
+          {card.stat}
+        </p>
+        <p class="text-sm text-earth-500 line-clamp-2">{card.detail}</p>
+      </a>
+    ))}
+  </div>
+</AdminLayout>

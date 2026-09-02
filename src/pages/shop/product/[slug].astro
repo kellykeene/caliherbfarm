@@ -3,33 +3,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumbs from '@/components/seo/Breadcrumbs.astro';
 import SlidingScaleSelector from '@/components/product/SlidingScaleSelector.astro';
 import ProductCard from '@/components/product/ProductCard.astro';
-import { getCollection, render } from 'astro:content';
-import { SITE } from '@/lib/constants';
+import { render } from 'astro:content';
+import {
+  findCategory,
+  getStorefrontCatalog,
+  getVisibleCategories,
+} from '@/lib/catalog';
+import { SITE, productHref } from '@/lib/constants';
 import { getProductSchema } from '@/lib/schema';
 
-export async function getStaticPaths() {
-  const products = await getCollection('products');
-  return products.map((product) => ({
-    params: { slug: product.id },
-    props: { product },
-  }));
-}
+const { slug } = Astro.params;
 
-const { product } = Astro.props;
-const { Content } = await render(product);
+const [catalog, categories] = await Promise.all([
+  getStorefrontCatalog(),
+  getVisibleCategories(),
+]);
 
-// Get related products
-const allProducts = await getCollection('products');
+const product = catalog.find((p) => p.id === slug);
+// Hidden products, and products in a hidden category, are simply not there.
+if (!product) return new Response('Not found', { status: 404 });
+
+// Body copy still comes from the markdown entry; the admin only overrides
+// the structured fields around it.
+const { Content } = await render(product.entry);
+
 const relatedSlugs = product.data.relatedProducts || [];
 const relatedProducts = relatedSlugs
-  .map((slug: string) => allProducts.find((p) => p.id === slug))
+  .map((id: string) => catalog.find((p) => p.id === id))
   .filter(Boolean);
 
 // Fallback: same category if no related products
 const fallbackRelated =
   relatedProducts.length > 0
     ? relatedProducts
-    : allProducts
+    : catalog
         .filter((p) => p.data.category === product.data.category && p.id !== product.id)
         .slice(0, 4);
 
@@ -40,6 +47,8 @@ function formatPrice(cents: number) {
 const variants = product.data.variants || [];
 const lowPrice = variants.length > 0 ? Math.min(...variants.map((v: { price: number }) => v.price)) : product.data.price;
 const highPrice = variants.length > 0 ? Math.max(...variants.map((v: { price: number }) => v.price)) : product.data.price;
+
+const category = findCategory(categories, product.data.category);
 
 const schema = getProductSchema({
   name: product.data.title,
@@ -58,11 +67,14 @@ const schema = getProductSchema({
   description={product.data.description}
   schema={schema}
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-right">
     <Breadcrumbs
       items={[
         { label: 'Shop', href: '/shop' },
-        { label: product.data.title, href: `/shop/${product.id}` },
+        ...(category
+          ? [{ label: category.label, href: `/shop/${category.slug}` }]
+          : []),
+        { label: product.data.title, href: productHref(product.id) },
       ]}
     />
   </div>

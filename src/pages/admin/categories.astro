@@ -1,0 +1,288 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { guardPage } from '@/lib/auth';
+import { getCatalog, getCategories } from '@/lib/catalog';
+
+const denied = guardPage(Astro);
+if (denied) return denied;
+
+const [categories, products] = await Promise.all([getCategories(), getCatalog()]);
+
+const counts = new Map<string, number>();
+for (const product of products) {
+  counts.set(product.data.category, (counts.get(product.data.category) ?? 0) + 1);
+}
+---
+
+<AdminLayout title="Categories">
+  <h1 class="font-display text-3xl font-bold text-forest-900 mb-2">Categories</h1>
+  <p class="text-earth-500 mb-8 text-sm">
+    Order here is the order in the shop and in the Shop menu. A hidden category
+    disappears from the site along with its products.
+  </p>
+
+  <div id="category-list" class="space-y-4">
+    {categories.map((category, index) => (
+      <article
+        class="bg-white rounded-[--radius-card] border border-sage-200 p-5"
+        data-category
+        data-slug={category.slug}
+        data-custom={String(category.custom)}
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+          <div class="flex items-center gap-3">
+            <div class="flex flex-col">
+              <button
+                type="button"
+                data-move="up"
+                disabled={index === 0}
+                aria-label={`Move ${category.label} up`}
+                class="px-2 text-earth-500 hover:text-forest-900 disabled:opacity-25"
+              >&#9650;</button>
+              <button
+                type="button"
+                data-move="down"
+                disabled={index === categories.length - 1}
+                aria-label={`Move ${category.label} down`}
+                class="px-2 text-earth-500 hover:text-forest-900 disabled:opacity-25"
+              >&#9660;</button>
+            </div>
+            <div>
+              <p class="font-display font-bold text-forest-900" data-label-preview>
+                {category.label}
+              </p>
+              <p class="text-xs text-earth-500 font-mono">
+                /shop/{category.slug}
+                <span class="ml-2 not-italic">
+                  {counts.get(category.slug) ?? 0} product{(counts.get(category.slug) ?? 0) === 1 ? '' : 's'}
+                </span>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            data-delete
+            class="text-sm text-barn-700 hover:text-barn-900 font-medium"
+          >
+            Delete
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-forest-900 mb-1">Name</label>
+            <input
+              type="text"
+              data-field="label"
+              value={category.label}
+              maxlength="60"
+              class="w-full px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-forest-900 mb-1">
+              Homepage position
+            </label>
+            <input
+              type="number"
+              data-field="homeOrder"
+              value={category.homeOrder ?? ''}
+              min="1"
+              placeholder="Not on homepage"
+              class="w-full px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors"
+            />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-forest-900 mb-1">Blurb</label>
+            <textarea
+              data-field="blurb"
+              rows="2"
+              maxlength="400"
+              class="w-full px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors resize-y"
+            >{category.blurb}</textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-6 mt-4">
+          <label class="flex items-center gap-2 text-sm text-forest-900">
+            <input type="checkbox" data-field="visible" checked={!category.hidden} class="w-4 h-4 accent-forest-700" />
+            Visible on the site
+          </label>
+          <label class="flex items-center gap-2 text-sm text-forest-900">
+            <input type="checkbox" data-field="primary" checked={category.primary} class="w-4 h-4 accent-forest-700" />
+            Lead category (top of the Shop menu)
+          </label>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <div class="flex flex-wrap items-center gap-4 mt-8">
+    <button
+      type="button"
+      id="save"
+      class="min-h-[44px] px-8 py-3 bg-barn-500 text-white font-medium rounded-[--radius-card] hover:bg-barn-700 transition-colors"
+    >
+      Save all
+    </button>
+    <button
+      type="button"
+      id="reset"
+      class="min-h-[44px] px-5 py-3 border border-sage-200 text-earth-500 text-sm font-medium rounded-[--radius-card] hover:text-forest-900 transition-colors"
+    >
+      Reset to defaults
+    </button>
+    <p id="status" class="text-sm" role="status" aria-live="polite"></p>
+  </div>
+
+  <!-- Add new -->
+  <section class="mt-12 bg-white rounded-[--radius-card] border border-sage-200 p-6">
+    <h2 class="font-display text-lg font-bold text-forest-900 mb-4">
+      Add a category
+    </h2>
+    <div class="flex flex-wrap gap-4 items-end">
+      <div class="flex-1 min-w-[220px]">
+        <label for="new-label" class="block text-xs font-medium text-forest-900 mb-1">
+          Name
+        </label>
+        <input
+          type="text"
+          id="new-label"
+          maxlength="60"
+          placeholder="Herbal Vinegars"
+          class="w-full px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors"
+        />
+      </div>
+      <button
+        type="button"
+        id="add"
+        class="min-h-[44px] px-6 py-2.5 bg-forest-700 text-white text-sm font-medium rounded-[--radius-card] hover:bg-forest-900 transition-colors"
+      >
+        Add
+      </button>
+    </div>
+    <p class="text-xs text-earth-500 mt-3">
+      The URL is built from the name. New categories start hidden off the
+      homepage — set a position above once you have products in them.
+    </p>
+  </section>
+</AdminLayout>
+
+<script>
+  const list = document.getElementById('category-list')!;
+  const status = document.getElementById('status')!;
+
+  function setStatus(text: string, tone: 'ok' | 'error' | 'busy') {
+    status.textContent = text;
+    status.className = `text-sm ${
+      tone === 'ok' ? 'text-forest-700' : tone === 'error' ? 'text-barn-700' : 'text-earth-500'
+    }`;
+  }
+
+  function collect() {
+    return Array.from(list.querySelectorAll<HTMLElement>('[data-category]')).map((card) => {
+      const field = <T extends HTMLElement>(name: string) =>
+        card.querySelector<T>(`[data-field="${name}"]`)!;
+      const homeOrderRaw = field<HTMLInputElement>('homeOrder').value.trim();
+
+      return {
+        slug: card.dataset.slug,
+        label: field<HTMLInputElement>('label').value,
+        blurb: field<HTMLTextAreaElement>('blurb').value,
+        hidden: !field<HTMLInputElement>('visible').checked,
+        primary: field<HTMLInputElement>('primary').checked,
+        homeOrder: homeOrderRaw === '' ? null : Number(homeOrderRaw),
+      };
+    });
+  }
+
+  async function send(method: string, body?: unknown, query = '') {
+    const res = await fetch(`/api/admin/categories${query}`, {
+      method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? 'Something went wrong.');
+    return data;
+  }
+
+  // Reorder
+  list.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-move]');
+    if (!button) return;
+    const card = button.closest<HTMLElement>('[data-category]')!;
+    const sibling =
+      button.dataset.move === 'up'
+        ? card.previousElementSibling
+        : card.nextElementSibling;
+    if (!sibling) return;
+    if (button.dataset.move === 'up') card.after(sibling);
+    else sibling.after(card);
+    setStatus('Order changed — press Save all.', 'busy');
+  });
+
+  // Live label preview
+  list.addEventListener('input', (event) => {
+    const input = event.target as HTMLElement;
+    if (input.getAttribute('data-field') !== 'label') return;
+    const card = input.closest<HTMLElement>('[data-category]')!;
+    card.querySelector('[data-label-preview]')!.textContent =
+      (input as HTMLInputElement).value || '(unnamed)';
+  });
+
+  // Delete
+  list.addEventListener('click', async (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-delete]');
+    if (!button) return;
+    const card = button.closest<HTMLElement>('[data-category]')!;
+    const slug = card.dataset.slug!;
+
+    setStatus('Deleting…', 'busy');
+    try {
+      await send('DELETE', undefined, `?slug=${encodeURIComponent(slug)}`);
+      card.remove();
+      setStatus('Deleted.', 'ok');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not delete.', 'error');
+    }
+  });
+
+  document.getElementById('save')?.addEventListener('click', async () => {
+    setStatus('Saving…', 'busy');
+    try {
+      await send('PUT', collect());
+      setStatus('Saved — live now.', 'ok');
+      setTimeout(() => window.location.reload(), 700);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not save.', 'error');
+    }
+  });
+
+  document.getElementById('add')?.addEventListener('click', async () => {
+    const input = document.getElementById('new-label') as HTMLInputElement;
+    if (!input.value.trim()) {
+      setStatus('Give the category a name first.', 'error');
+      return;
+    }
+    setStatus('Adding…', 'busy');
+    try {
+      await send('POST', { label: input.value, primary: false, hidden: true });
+      window.location.reload();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not add.', 'error');
+    }
+  });
+
+  document.getElementById('reset')?.addEventListener('click', async () => {
+    setStatus('Restoring defaults…', 'busy');
+    try {
+      await send('PATCH');
+      window.location.reload();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not reset.', 'error');
+    }
+  });
+</script>

@@ -1,0 +1,143 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { guardPage } from '@/lib/auth';
+import { getCatalog, getCategories, sortProducts } from '@/lib/catalog';
+
+const denied = guardPage(Astro);
+if (denied) return denied;
+
+const [products, categories] = await Promise.all([getCatalog(), getCategories()]);
+const byCategory = new Map(categories.map((c) => [c.slug, c]));
+const sorted = sortProducts(products);
+---
+
+<AdminLayout title="Products">
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-2">
+    <h1 class="font-display text-3xl font-bold text-forest-900">Products</h1>
+    <input
+      type="search"
+      id="filter"
+      placeholder="Filter by name…"
+      aria-label="Filter products by name"
+      class="min-h-[44px] px-4 py-2 rounded-[--radius-card] bg-white border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors"
+    />
+  </div>
+  <p class="text-earth-500 mb-8 text-sm">
+    {products.length} products. Long copy still lives in the markdown files; everything
+    listed here overrides it live.
+  </p>
+
+  <div class="bg-white rounded-[--radius-card] border border-sage-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <caption class="sr-only">All products</caption>
+      <thead class="bg-earth-50 text-left">
+        <tr>
+          <th scope="col" class="px-4 py-3 font-semibold text-forest-900">Product</th>
+          <th scope="col" class="px-4 py-3 font-semibold text-forest-900">Category</th>
+          <th scope="col" class="px-4 py-3 font-semibold text-forest-900">Price</th>
+          <th scope="col" class="px-4 py-3 font-semibold text-forest-900">Visible</th>
+          <th scope="col" class="px-4 py-3"><span class="sr-only">Edit</span></th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        {sorted.map((product) => {
+          const category = byCategory.get(product.data.category);
+          return (
+            <tr class="border-t border-sage-200" data-name={product.data.title.toLowerCase()}>
+              <td class="px-4 py-3">
+                <span class="font-medium text-forest-900">{product.data.title}</span>
+                <span class="block text-xs text-earth-500 font-mono">{product.id}</span>
+              </td>
+              <td class="px-4 py-3">
+                {category ? (
+                  <span class={category.hidden ? 'text-earth-500' : 'text-forest-900'}>
+                    {category.label}{category.hidden ? ' (hidden)' : ''}
+                  </span>
+                ) : (
+                  <span class="text-barn-700 font-medium">
+                    Missing: {product.data.category}
+                  </span>
+                )}
+              </td>
+              <td class="px-4 py-3 text-earth-500">{product.data.priceDisplay}</td>
+              <td class="px-4 py-3">
+                <button
+                  type="button"
+                  data-toggle={product.id}
+                  data-hidden={String(product.hidden)}
+                  aria-pressed={product.hidden ? 'false' : 'true'}
+                  class={`min-h-[36px] px-3 rounded-full text-xs font-medium transition-colors ${
+                    product.hidden
+                      ? 'bg-earth-100 text-earth-500'
+                      : 'bg-forest-50 text-forest-700'
+                  }`}
+                >
+                  {product.hidden ? 'Hidden' : 'Visible'}
+                </button>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <a
+                  href={`/admin/products/${product.id}`}
+                  class="text-forest-700 font-medium hover:text-forest-900"
+                >
+                  Edit
+                </a>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+
+  <p id="status" class="mt-4 text-sm" role="status" aria-live="polite"></p>
+</AdminLayout>
+
+<script>
+  const status = document.getElementById('status')!;
+  const filter = document.getElementById('filter') as HTMLInputElement;
+  const rows = Array.from(document.querySelectorAll<HTMLTableRowElement>('#rows tr'));
+
+  filter?.addEventListener('input', () => {
+    const term = filter.value.trim().toLowerCase();
+    rows.forEach((row) => {
+      row.hidden = Boolean(term) && !(row.dataset.name ?? '').includes(term);
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const id = button.dataset.toggle!;
+      const nextHidden = button.dataset.hidden !== 'true';
+      button.disabled = true;
+      status.textContent = 'Saving…';
+      status.className = 'mt-4 text-sm text-earth-500';
+
+      try {
+        const res = await fetch('/api/admin/products', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, hidden: nextHidden }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Could not save.');
+
+        button.dataset.hidden = String(nextHidden);
+        button.setAttribute('aria-pressed', String(!nextHidden));
+        button.textContent = nextHidden ? 'Hidden' : 'Visible';
+        button.className = `min-h-[36px] px-3 rounded-full text-xs font-medium transition-colors ${
+          nextHidden ? 'bg-earth-100 text-earth-500' : 'bg-forest-50 text-forest-700'
+        }`;
+        status.textContent = 'Saved — live now.';
+        status.className = 'mt-4 text-sm text-forest-700';
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : 'Could not save.';
+        status.className = 'mt-4 text-sm text-barn-700';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>

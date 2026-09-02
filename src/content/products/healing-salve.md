@@ -1,7 +1,7 @@
 ---
 title: "All-Purpose Healing Salve"
 description: "A soothing herbal salve for dry skin, minor cuts, scrapes, and irritation. Made with farm-infused calendula and comfrey."
-category: "topicals"
+category: "face-body"
 price: 1400
 priceDisplay: "from $14.00"
 image: "/images/products/healing-salve.jpg"

@@ -1,0 +1,421 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { guardPage } from '@/lib/auth';
+import {
+  getCatalogProduct,
+  getCategories,
+  SLIDING_SCALE_TIERS,
+} from '@/lib/catalog';
+import { isStripeConfigured } from '@/lib/stripe';
+import { productHref } from '@/lib/constants';
+
+const denied = guardPage(Astro);
+if (denied) return denied;
+
+const { id } = Astro.params;
+const product = await getCatalogProduct(id!);
+if (!product) return new Response('Not found', { status: 404 });
+
+const categories = await getCategories();
+const variants = product.data.variants ?? [];
+const slidingScale = product.data.slidingScale;
+const stripeReady = isStripeConfigured();
+const stripeProductId = product.override.stripeProductId ?? '';
+
+const dollars = (cents: number) => (cents / 100).toFixed(2);
+
+const TIER_LABELS = {
+  low: 'Low income',
+  middle: 'Middle income',
+  high: 'High income',
+} as const;
+---
+
+<AdminLayout title={product.data.title}>
+  <a
+    href="/admin/products"
+    class="inline-flex items-center gap-1 text-sm text-forest-700 hover:text-forest-900 mb-4"
+  >
+    &larr; All products
+  </a>
+
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-display text-3xl font-bold text-forest-900">
+        {product.data.title}
+      </h1>
+      <p class="text-xs text-earth-500 font-mono mt-1">{product.id}</p>
+    </div>
+    <a
+      href={productHref(product.id)}
+      target="_blank"
+      rel="noopener"
+      class="text-sm text-forest-700 hover:text-forest-900 underline underline-offset-2"
+    >
+      View on site
+    </a>
+  </div>
+
+  <form id="product-form" data-id={product.id} class="space-y-8">
+    <!-- Details -->
+    <section class="bg-white rounded-[--radius-card] border border-sage-200 p-6 space-y-5">
+      <h2 class="font-display text-lg font-bold text-forest-900">Details</h2>
+
+      <div>
+        <label for="title" class="block text-sm font-medium text-forest-900 mb-2">
+          Title
+        </label>
+        <input
+          type="text"
+          id="title"
+          value={product.data.title}
+          maxlength="120"
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 focus:border-forest-500 transition-colors"
+        />
+      </div>
+
+      <div>
+        <label for="description" class="block text-sm font-medium text-forest-900 mb-2">
+          Short description
+        </label>
+        <textarea
+          id="description"
+          rows="3"
+          maxlength="400"
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 focus:border-forest-500 transition-colors resize-y"
+        >{product.data.description}</textarea>
+        <p class="text-xs text-earth-500 mt-2">
+          Shown on cards and in search results. The long body copy stays in the
+          markdown file.
+        </p>
+      </div>
+
+      <div>
+        <label for="category" class="block text-sm font-medium text-forest-900 mb-2">
+          Category
+        </label>
+        <select
+          id="category"
+          class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 focus:border-forest-500 transition-colors"
+        >
+          {categories.map((category) => (
+            <option
+              value={category.slug}
+              selected={category.slug === product.data.category}
+            >
+              {category.label}{category.hidden ? ' (hidden)' : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+    </section>
+
+    <!-- Visibility -->
+    <section class="bg-white rounded-[--radius-card] border border-sage-200 p-6 space-y-4">
+      <h2 class="font-display text-lg font-bold text-forest-900">Visibility</h2>
+      <label class="flex items-center gap-3 text-sm text-forest-900">
+        <input type="checkbox" id="visible" checked={!product.hidden} class="w-5 h-5 accent-forest-700" />
+        Show this product in the shop
+      </label>
+      <label class="flex items-center gap-3 text-sm text-forest-900">
+        <input type="checkbox" id="inStock" checked={product.data.inStock} class="w-5 h-5 accent-forest-700" />
+        In stock (unticked shows &ldquo;Sold Out&rdquo;)
+      </label>
+    </section>
+
+    <!-- Pricing -->
+    <section class="bg-white rounded-[--radius-card] border border-sage-200 p-6 space-y-5">
+      <h2 class="font-display text-lg font-bold text-forest-900">Pricing</h2>
+
+      {!stripeReady && (
+        <p class="rounded-[--radius-card] border border-gold-300 bg-gold-500/15 px-4 py-3 text-sm text-forest-900/80">
+          Stripe is not connected, so prices are read-only. Set
+          <code class="font-mono">STRIPE_SECRET_KEY</code> to enable editing.
+        </p>
+      )}
+
+      <div class="pb-5 border-b border-sage-200">
+        <label for="stripeProductId" class="block text-sm font-medium text-forest-900 mb-2">
+          Stripe product ID
+        </label>
+        <input
+          type="text"
+          id="stripeProductId"
+          value={stripeProductId}
+          placeholder="prod_ABC123"
+          spellcheck="false"
+          autocapitalize="off"
+          autocorrect="off"
+          class="w-full sm:w-96 px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 font-mono text-sm focus:border-forest-500 transition-colors"
+        />
+        <p id="stripe-product-status" class="text-xs mt-2 text-earth-500">
+          {stripeProductId
+            ? 'New prices are created against this Stripe product.'
+            : 'Optional. Set this and price changes no longer depend on the existing price IDs being real — which is what you need while the IDs below are placeholders.'}
+        </p>
+        <p class="text-xs text-earth-500 mt-1">
+          Find it in the Stripe dashboard under Products; it starts with
+          <code class="font-mono">prod_</code>. Leave blank to infer the product
+          from the current price instead.
+        </p>
+      </div>
+
+      {variants.length > 0 ? (
+        <>
+          <p class="text-sm text-earth-500">
+            {stripeProductId
+              ? 'Saving reconciles Stripe with these amounts: any price that is missing, archived, or set to a different amount is recreated against the linked Stripe product.'
+              : 'Saving a new price creates a fresh Stripe price and archives the old one, so the shop can never display an amount it will not charge.'}
+          </p>
+          <div class="space-y-3" id="variants">
+            {variants.map((variant, index) => (
+              <div
+                class="flex flex-wrap items-center gap-4 rounded-[--radius-card] border border-sage-200 px-4 py-3"
+                data-variant={index}
+              >
+                <span class="font-medium text-forest-900 min-w-[80px]">
+                  {variant.label}
+                </span>
+                <label class="flex items-center gap-2 text-sm">
+                  <span class="text-earth-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={dollars(variant.price)}
+                    data-price-input
+                    data-original={dollars(variant.price)}
+                    disabled={!stripeReady}
+                    aria-label={`Price for ${variant.label}`}
+                    class="w-28 px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 focus:border-forest-500 transition-colors disabled:opacity-50"
+                  />
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <span class="text-earth-500 whitespace-nowrap">Stripe description</span>
+                  <input
+                    type="text"
+                    data-nickname-input
+                    value={variant.stripeNickname ?? variant.label}
+                    maxlength="100"
+                    placeholder={variant.label}
+                    aria-label={`Stripe price description for ${variant.label}`}
+                    class="w-40 px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors"
+                  />
+                </label>
+                <label class="flex items-center gap-2 text-sm text-forest-900">
+                  <input
+                    type="checkbox"
+                    data-instock-input
+                    checked={variant.inStock}
+                    class="w-4 h-4 accent-forest-700"
+                  />
+                  In stock
+                </label>
+                <span class="text-xs text-earth-500 font-mono w-full truncate">
+                  {variant.stripePriceId}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : slidingScale ? (
+        <>
+          <p class="text-sm text-earth-500">
+            Pay-what-you-can tiers. Each must be at or above the one before it.
+            {product.data.isSubscription
+              ? ' These are recurring prices — the billing interval is carried over automatically.'
+              : ''}
+          </p>
+          <div class="space-y-3" id="sliding-scale">
+            {SLIDING_SCALE_TIERS.map((tier) => (
+              <div
+                class="flex flex-wrap items-center gap-4 rounded-[--radius-card] border border-sage-200 px-4 py-3"
+                data-tier={tier}
+              >
+                <span class="font-medium text-forest-900 min-w-[110px]">
+                  {TIER_LABELS[tier]}
+                </span>
+                <label class="flex items-center gap-2 text-sm">
+                  <span class="text-earth-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={dollars(slidingScale[tier].price)}
+                    data-tier-price
+                    disabled={!stripeReady}
+                    aria-label={`${TIER_LABELS[tier]} price`}
+                    class="w-28 px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 focus:border-forest-500 transition-colors disabled:opacity-50"
+                  />
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <span class="text-earth-500 whitespace-nowrap">Stripe description</span>
+                  <input
+                    type="text"
+                    data-nickname-input
+                    value={slidingScale[tier].stripeNickname ?? TIER_LABELS[tier]}
+                    maxlength="100"
+                    placeholder={TIER_LABELS[tier]}
+                    aria-label={`Stripe price description for ${TIER_LABELS[tier]}`}
+                    class="w-40 px-3 py-2 rounded-[--radius-card] border-2 border-sage-200 text-sm focus:border-forest-500 transition-colors"
+                  />
+                </label>
+                <span class="text-xs text-earth-500 font-mono w-full truncate">
+                  {slidingScale[tier].stripePriceId}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p id="tier-warning" class="text-sm text-barn-700" hidden>
+            Tiers must not decrease from low to high.
+          </p>
+        </>
+      ) : (
+        <p class="text-sm text-earth-500">This product has no priced variants.</p>
+      )}
+
+      <div>
+        <label for="priceDisplay" class="block text-sm font-medium text-forest-900 mb-2">
+          Price label
+        </label>
+        <input
+          type="text"
+          id="priceDisplay"
+          value={product.data.priceDisplay}
+          maxlength="60"
+          class="w-full sm:w-64 px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 focus:border-forest-500 transition-colors"
+        />
+        <p class="text-xs text-earth-500 mt-2">
+          Leave as is and it follows the cheapest variant automatically.
+        </p>
+      </div>
+    </section>
+
+    <div class="flex items-center gap-4">
+      <button
+        type="submit"
+        class="min-h-[44px] px-8 py-3 bg-barn-500 text-white font-medium rounded-[--radius-card] hover:bg-barn-700 transition-colors"
+      >
+        Save changes
+      </button>
+      <p id="status" class="text-sm" role="status" aria-live="polite"></p>
+    </div>
+  </form>
+</AdminLayout>
+
+<script>
+  const form = document.getElementById('product-form') as HTMLFormElement;
+  const status = document.getElementById('status')!;
+  const id = form.dataset.id!;
+
+  function setStatus(text: string, tone: 'ok' | 'error' | 'busy') {
+    status.textContent = text;
+    status.className = `text-sm ${
+      tone === 'ok' ? 'text-forest-700' : tone === 'error' ? 'text-barn-700' : 'text-earth-500'
+    }`;
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setStatus('Saving…', 'busy');
+
+    const payload: Record<string, unknown> = {
+      id,
+      title: (document.getElementById('title') as HTMLInputElement).value,
+      description: (document.getElementById('description') as HTMLTextAreaElement).value,
+      category: (document.getElementById('category') as HTMLSelectElement).value,
+      hidden: !(document.getElementById('visible') as HTMLInputElement).checked,
+      inStock: (document.getElementById('inStock') as HTMLInputElement).checked,
+      priceDisplay: (document.getElementById('priceDisplay') as HTMLInputElement).value,
+      stripeProductId: (document.getElementById('stripeProductId') as HTMLInputElement).value,
+    };
+
+    const rows = document.querySelectorAll<HTMLElement>('[data-variant]');
+    if (rows.length > 0) {
+      payload.variants = Array.from(rows).map((row) => {
+        const price = row.querySelector<HTMLInputElement>('[data-price-input]')!;
+        const inStock = row.querySelector<HTMLInputElement>('[data-instock-input]')!;
+        const nickname = row.querySelector<HTMLInputElement>('[data-nickname-input]');
+        return {
+          price: Math.round(parseFloat(price.value || '0') * 100),
+          inStock: inStock.checked,
+          stripeNickname: nickname?.value ?? '',
+        };
+      });
+    }
+
+    const tiers = document.querySelectorAll<HTMLElement>('[data-tier]');
+    if (tiers.length > 0) {
+      const scale: Record<string, { price: number; stripeNickname: string }> = {};
+      const amounts: number[] = [];
+      tiers.forEach((row) => {
+        const input = row.querySelector<HTMLInputElement>('[data-tier-price]')!;
+        const nickname = row.querySelector<HTMLInputElement>('[data-nickname-input]');
+        const cents = Math.round(parseFloat(input.value || '0') * 100);
+        scale[row.dataset.tier!] = {
+          price: cents,
+          stripeNickname: nickname?.value ?? '',
+        };
+        amounts.push(cents);
+      });
+
+      // Mirror the server rule so the mistake is caught before any Stripe call.
+      const warning = document.getElementById('tier-warning');
+      const ascending = amounts.every((value, i) => i === 0 || amounts[i - 1] <= value);
+      if (warning) warning.hidden = ascending;
+      if (!ascending) {
+        setStatus('Tiers must not decrease from low to high.', 'error');
+        return;
+      }
+      payload.slidingScale = scale;
+    }
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus(data.error ?? 'Could not save.', 'error');
+        return;
+      }
+      if (data.stripeProductName) {
+        const linked = document.getElementById('stripe-product-status');
+        if (linked) {
+          linked.textContent = `Linked to "${data.stripeProductName}" in Stripe.`;
+          linked.className = 'text-xs mt-2 text-forest-700';
+        }
+      }
+
+      const created: string[] = data.pricesCreated ?? [];
+      const renamed: string[] = data.pricesRenamed ?? [];
+      if (created.length === 0 && renamed.length > 0) {
+        setStatus(
+          `Saved — updated ${renamed.length} Stripe description${
+            renamed.length === 1 ? '' : 's'
+          } (${renamed.join(', ')}).`,
+          'ok',
+        );
+      } else if (created.length > 0) {
+        setStatus(
+          `Saved — created ${created.length} new Stripe price${
+            created.length === 1 ? '' : 's'
+          } (${created.join(', ')}).`,
+          'ok',
+        );
+      } else if (data.stripeProductName) {
+        setStatus(`Saved — Stripe already matches "${data.stripeProductName}".`, 'ok');
+      } else {
+        setStatus('Saved — live now.', 'ok');
+      }
+      // Re-read so any new Stripe price IDs are reflected.
+      setTimeout(() => window.location.reload(), 1200);
+    } catch {
+      setStatus('Could not reach the server.', 'error');
+    }
+  });
+</script>

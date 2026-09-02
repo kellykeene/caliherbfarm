@@ -1,23 +1,25 @@
 ---
-interface Props {
-  message: string;
-}
-
-const { message } = Astro.props;
+/**
+ * The message is fetched at runtime from /api/announcement rather than baked
+ * in at build time, so editing it at /admin/announcement takes effect
+ * immediately without a redeploy. The banner starts hidden and reveals itself
+ * once a message arrives, which keeps it from flashing empty on load.
+ */
 ---
 
 <div
   id="announcement-banner"
   role="region"
   aria-label="Announcement"
-  class="bg-plum-600 text-white text-center text-sm px-4 py-3 relative"
+  hidden
+  class="bg-gold-500 text-black text-center text-sm px-4 py-3 relative"
 >
-  <p class="max-w-4xl mx-auto pr-8">{message}</p>
+  <p id="announcement-message" class="max-w-4xl mx-auto pr-8"></p>
   <button
     type="button"
     id="dismiss-banner"
     aria-label="Dismiss announcement"
-    class="absolute right-3 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-white/80 hover:text-white transition-colors"
+    class="absolute right-3 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-black/70 hover:text-black transition-colors"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -38,15 +40,40 @@ const { message } = Astro.props;
 </div>
 
 <script>
-  const banner = document.getElementById('announcement-banner');
-  const dismiss = document.getElementById('dismiss-banner');
+  const DISMISS_KEY = 'banner-dismissed-message';
 
-  if (localStorage.getItem('banner-dismissed') === 'true') {
-    banner?.classList.add('hidden');
+  async function initAnnouncement() {
+    const banner = document.getElementById('announcement-banner');
+    const messageEl = document.getElementById('announcement-message');
+    const dismiss = document.getElementById('dismiss-banner');
+    if (!banner || !messageEl || !dismiss) return;
+
+    let data: { message?: string; enabled?: boolean };
+    try {
+      const res = await fetch('/api/announcement', { cache: 'no-store' });
+      if (!res.ok) return;
+      data = await res.json();
+    } catch {
+      // Offline or the endpoint is unavailable — just leave the banner hidden.
+      return;
+    }
+
+    const message = (data.message ?? '').trim();
+    if (!data.enabled || !message) return;
+
+    // Dismissal is keyed to the message itself, so a NEW announcement shows up
+    // again for someone who dismissed the previous one.
+    if (localStorage.getItem(DISMISS_KEY) === message) return;
+
+    messageEl.textContent = message;
+    banner.hidden = false;
+
+    dismiss.addEventListener('click', () => {
+      banner.hidden = true;
+      localStorage.setItem(DISMISS_KEY, message);
+    });
   }
 
-  dismiss?.addEventListener('click', () => {
-    banner?.classList.add('hidden');
-    localStorage.setItem('banner-dismissed', 'true');
-  });
+  initAnnouncement();
+  document.addEventListener('astro:after-swap', initAnnouncement);
 </script>

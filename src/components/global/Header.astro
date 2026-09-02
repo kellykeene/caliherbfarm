@@ -1,8 +1,11 @@
 ---
-import { NAV_LINKS, SITE } from '@/lib/constants';
+import { SITE } from '@/lib/constants';
+import { buildNavLinks, getCategories } from '@/lib/catalog';
+
+const NAV_LINKS = buildNavLinks(await getCategories());
 ---
 
-<header class="sticky top-0 z-40 bg-cream/95 backdrop-blur-sm overflow-visible">
+<header class="sticky top-0 z-40 bg-plum-600 overflow-visible">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16 sm:h-20">
       <!-- Logo -->
@@ -21,7 +24,7 @@ import { NAV_LINKS, SITE } from '@/lib/constants';
             <li class="relative group">
               <a
                 href={link.href}
-                class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-forest-700 hover:text-forest-900 hover:bg-forest-50 rounded-[--radius-card] transition-colors"
+                class="inline-flex items-center gap-1 px-3 py-2 text-lg font-medium text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
               >
                 {link.label}
                 {'children' in link && link.children && (
@@ -70,7 +73,7 @@ import { NAV_LINKS, SITE } from '@/lib/constants';
         <a
           href="/cart"
           aria-label="Shopping cart"
-          class="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-700 hover:text-forest-900 hover:bg-forest-50 rounded-[--radius-card] transition-colors"
+          class="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -90,7 +93,7 @@ import { NAV_LINKS, SITE } from '@/lib/constants';
           </svg>
           <span
             id="cart-count"
-            class="absolute -top-1 -right-1 bg-plum-600 text-white text-xs font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full hidden"
+            class="absolute -top-1 -right-1 bg-barn-500 text-white text-xs font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full hidden"
             aria-live="polite"
           ></span>
         </a>
@@ -102,7 +105,7 @@ import { NAV_LINKS, SITE } from '@/lib/constants';
           aria-label="Open menu"
           aria-expanded="false"
           aria-controls="mobile-menu"
-          class="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-700 hover:text-forest-900 hover:bg-forest-50 rounded-[--radius-card] transition-colors"
+          class="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
         >
           <svg
             id="menu-icon-open"
