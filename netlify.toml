@@ -1,0 +1,10 @@
+# Build settings live here rather than only in the Netlify UI, so they are
+# reviewable and travel with the repo.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# No `functions` key on purpose. That setting points at a directory of
+# hand-written Netlify Functions; this project has none. The whole Astro app is
+# compiled by @astrojs/netlify into a single SSR function at
+# .netlify/v1/functions/ssr/, which Netlify discovers on its own.
