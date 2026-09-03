@@ -11,13 +11,20 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response('Missing stripe-signature header', { status: 400 });
   }
 
+  // import.meta.env is inlined at build time, so a variable added in Netlify
+  // after the last build would be undefined here and every webhook would fail
+  // signature verification with a confusing 400. Same fallback as lib/stripe.ts.
+  const webhookSecret =
+    import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set — cannot verify webhooks.');
+    return new Response('Webhook secret not configured', { status: 500 });
+  }
+
   try {
     const stripe = getStripe();
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      import.meta.env.STRIPE_WEBHOOK_SECRET,
-    );
+    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
     switch (event.type) {
       case 'checkout.session.completed': {
