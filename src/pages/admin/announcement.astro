@@ -68,8 +68,8 @@ const announcement = await readAnnouncement();
       <h2 class="text-sm font-semibold uppercase tracking-wider text-earth-500 mb-3">
         Preview
       </h2>
-      <div class="bg-gold-500 text-black text-center text-sm px-4 py-3 rounded-[--radius-card]">
-        <span id="preview-text" class="text-black/50">Nothing set</span>
+      <div class="bg-white text-forest-900 border border-sage-200 text-center text-sm px-4 py-3 rounded-[--radius-card]">
+        <span id="preview-text" class="text-forest-900/50">Nothing set</span>
       </div>
     </div>
   </div>
@@ -95,7 +95,7 @@ const announcement = await readAnnouncement();
     const value = messageEl.value;
     countEl.textContent = `${value.length} / ${max}`;
     previewText.textContent = value.trim() || 'Nothing set';
-    previewText.className = value.trim() ? '' : 'text-black/50';
+    previewText.className = value.trim() ? '' : 'text-forest-900/50';
   }
 
   messageEl.addEventListener('input', refresh);

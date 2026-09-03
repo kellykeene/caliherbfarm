@@ -6,6 +6,8 @@ import { guardPage } from '@/lib/auth';
 import {
   getCatalogProduct,
   getCategories,
+  mediaUrl,
+  MAX_MEDIA_PER_PRODUCT,
   SLIDING_SCALE_TIERS,
 } from '@/lib/catalog';
 import { isStripeConfigured } from '@/lib/stripe';
@@ -23,6 +25,14 @@ const variants = product.data.variants ?? [];
 const slidingScale = product.data.slidingScale;
 const stripeReady = isStripeConfigured();
 const stripeProductId = product.override.stripeProductId ?? '';
+
+// Rendered by the client script so the markup lives in exactly one place.
+const mediaState = {
+  productId: product.id,
+  max: MAX_MEDIA_PER_PRODUCT,
+  mainMediaId: product.override.mainMediaId ?? null,
+  media: product.media.map((m) => ({ ...m, url: mediaUrl(m) })),
+};
 
 const dollars = (cents: number) => (cents / 100).toFixed(2);
 
@@ -123,6 +133,33 @@ const TIER_LABELS = {
         <input type="checkbox" id="inStock" checked={product.data.inStock} class="w-5 h-5 accent-forest-700" />
         In stock (unticked shows &ldquo;Sold Out&rdquo;)
       </label>
+    </section>
+
+    <!-- Images: saved immediately through /api/admin/media, not by the form submit -->
+    <section class="bg-white rounded-[--radius-card] border border-sage-200 p-6 space-y-5 mt-8">
+      <div class="flex items-baseline justify-between gap-4">
+        <h2 class="font-display text-lg font-bold text-forest-900">Images</h2>
+        <p id="media-count" class="text-xs text-earth-500 tabular-nums" aria-live="polite"></p>
+      </div>
+      <p class="text-sm text-earth-500">
+        The main image is the tile shown in listings and the cart. Hidden images stay
+        here but never appear on the site. Large photos are shrunk in your browser
+        before uploading, so there is no need to resize them first.
+      </p>
+
+      <div>
+        <label
+          for="media-file"
+          class="inline-flex items-center min-h-[44px] px-5 py-2.5 bg-forest-700 text-white text-sm font-medium rounded-[--radius-card] hover:bg-forest-900 transition-colors cursor-pointer"
+        >
+          Add images
+        </label>
+        <input type="file" id="media-file" accept="image/*" multiple class="sr-only" />
+        <p id="media-status" class="text-sm mt-3" role="status" aria-live="polite"></p>
+      </div>
+
+      <ul id="media-list" class="space-y-3" role="list"></ul>
+      <p id="media-empty" class="text-sm text-earth-500" hidden>No images yet.</p>
     </section>
 
     <!-- Pricing -->
@@ -303,6 +340,8 @@ const TIER_LABELS = {
       <p id="status" class="text-sm" role="status" aria-live="polite"></p>
     </div>
   </form>
+
+  <script type="application/json" id="media-data" set:html={JSON.stringify(mediaState)} />
 </AdminLayout>
 
 <script>
@@ -418,4 +457,259 @@ const TIER_LABELS = {
       setStatus('Could not reach the server.', 'error');
     }
   });
+</script>
+
+<script>
+  /* ---------------------------------------------------------------- *
+   * Product images
+   *
+   * The list is re-rendered from the server's response after every change,
+   * so it can never drift from what is stored. Clicks and edits use event
+   * delegation on the <ul> so they survive those re-renders; drag handlers
+   * are per-item and rebound in render().
+   * ---------------------------------------------------------------- */
+
+  interface MediaItem {
+    id: string;
+    url: string;
+    alt: string;
+    visible: boolean;
+    bytes: number;
+  }
+
+  const dataEl = document.getElementById('media-data');
+  const listEl = document.getElementById('media-list');
+  const emptyEl = document.getElementById('media-empty');
+  const countEl = document.getElementById('media-count');
+  const fileInput = document.getElementById('media-file') as HTMLInputElement | null;
+  const statusEl = document.getElementById('media-status');
+
+  if (dataEl && listEl && emptyEl && countEl && fileInput && statusEl) {
+    const state = JSON.parse(dataEl.textContent || '{}');
+    const productId: string = state.productId;
+    const MAX: number = state.max;
+    let media: MediaItem[] = state.media ?? [];
+    let mainId: string | null = state.mainMediaId ?? null;
+
+    const setStatus = (text: string, tone: 'ok' | 'error' | 'busy' = 'ok') => {
+      statusEl.textContent = text;
+      statusEl.className = `text-sm mt-3 ${
+        tone === 'ok' ? 'text-forest-700' : tone === 'error' ? 'text-barn-700' : 'text-earth-500'
+      }`;
+    };
+
+    const kb = (bytes: number) => `${Math.round(bytes / 1024)} KB`;
+
+    function render() {
+      countEl.textContent = `${media.length} / ${MAX}`;
+      emptyEl.hidden = media.length > 0;
+
+      listEl.innerHTML = media
+        .map(
+          (m, i) => `
+        <li draggable="true" data-id="${m.id}"
+            class="flex items-start gap-4 p-3 border border-sage-200 rounded-[--radius-card] bg-earth-50">
+          <span aria-hidden="true" class="cursor-grab select-none text-earth-500 pt-6">⠿</span>
+          <img src="${m.url}" alt="" width="80" height="80"
+               class="w-20 h-20 object-cover rounded-lg border border-sage-200 bg-white shrink-0" />
+          <div class="flex-1 min-w-0 space-y-2">
+            <label class="flex items-center gap-2 text-sm text-forest-900">
+              <input type="radio" name="main-media" data-act="main" ${m.id === mainId ? 'checked' : ''}
+                     class="w-4 h-4 accent-forest-700" />
+              Main image
+            </label>
+            <label class="flex items-center gap-2 text-sm text-forest-900">
+              <input type="checkbox" data-act="visible" ${m.visible ? 'checked' : ''}
+                     class="w-4 h-4 accent-forest-700" />
+              Show on the site
+            </label>
+            <label class="block">
+              <span class="sr-only">Alt text</span>
+              <input type="text" data-act="alt" value="${m.alt.replace(/"/g, '&quot;')}"
+                     maxlength="200" placeholder="Describe the photo (for screen readers and search)"
+                     class="w-full px-3 py-2 text-sm rounded-[--radius-card] bg-white border border-sage-200 focus:border-forest-500 transition-colors" />
+            </label>
+            <p class="text-xs text-earth-500">${kb(m.bytes)}</p>
+          </div>
+          <div class="flex flex-col gap-1 shrink-0">
+            <button type="button" data-act="up" aria-label="Move up" ${i === 0 ? 'disabled' : ''}
+                    class="min-w-[44px] min-h-[36px] text-forest-700 hover:bg-forest-50 rounded disabled:opacity-30">↑</button>
+            <button type="button" data-act="down" aria-label="Move down" ${i === media.length - 1 ? 'disabled' : ''}
+                    class="min-w-[44px] min-h-[36px] text-forest-700 hover:bg-forest-50 rounded disabled:opacity-30">↓</button>
+            <button type="button" data-act="delete" aria-label="Delete image"
+                    class="min-w-[44px] min-h-[36px] text-barn-700 hover:bg-barn-50 rounded">✕</button>
+          </div>
+        </li>`,
+        )
+        .join('');
+
+      bindDrag();
+    }
+
+    async function send(body: unknown, method = 'PATCH') {
+      const res = await fetch('/api/admin/media', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, ...(body as object) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'That did not save.');
+      media = (data.media ?? []).map((m: MediaItem & { key: string }) => ({
+        ...m,
+        url: `/media/${m.key}`,
+      }));
+      mainId = data.mainMediaId ?? null;
+      render();
+    }
+
+    async function guarded(fn: () => Promise<void>, okText: string) {
+      try {
+        setStatus('Saving…', 'busy');
+        await fn();
+        setStatus(okText, 'ok');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'That did not save.', 'error');
+      }
+    }
+
+    /* -------- uploads: shrink in the browser first -------- */
+
+    async function shrink(file: File): Promise<{ file: File; width: number; height: number }> {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+
+      // toBlob silently falls back to PNG where WebP encoding is unsupported,
+      // so check what actually came back rather than trusting the request.
+      let blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', 0.82));
+      if (!blob || blob.type !== 'image/webp') {
+        blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
+      }
+      if (!blob) throw new Error('Could not process that image.');
+
+      const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+      return { file: new File([blob], `upload.${ext}`, { type: blob.type }), width: w, height: h };
+    }
+
+    fileInput.addEventListener('change', async () => {
+      const files = [...(fileInput.files ?? [])];
+      fileInput.value = '';
+      if (files.length === 0) return;
+
+      if (media.length + files.length > MAX) {
+        setStatus(`That would be more than ${MAX} images. Delete some first.`, 'error');
+        return;
+      }
+
+      for (const [i, file] of files.entries()) {
+        try {
+          setStatus(`Uploading ${i + 1} of ${files.length}…`, 'busy');
+          const shrunk = await shrink(file);
+          const form = new FormData();
+          form.append('productId', productId);
+          form.append('file', shrunk.file);
+          form.append('alt', '');
+          form.append('width', String(shrunk.width));
+          form.append('height', String(shrunk.height));
+
+          const res = await fetch('/api/admin/media', { method: 'POST', body: form });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Upload failed.');
+
+          media = (data.media ?? []).map((m: MediaItem & { key: string }) => ({
+            ...m,
+            url: `/media/${m.key}`,
+          }));
+          mainId = data.mainMediaId ?? mainId;
+          render();
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : 'Upload failed.', 'error');
+          return;
+        }
+      }
+      setStatus(`Uploaded ${files.length} image${files.length === 1 ? '' : 's'}.`, 'ok');
+    });
+
+    /* -------- per-item actions (delegated) -------- */
+
+    listEl.addEventListener('click', (event) => {
+      const btn = (event.target as HTMLElement).closest('button[data-act]') as HTMLButtonElement | null;
+      if (!btn) return;
+      const id = btn.closest('li')!.dataset.id!;
+      const act = btn.dataset.act;
+
+      if (act === 'delete') {
+        guarded(() => send({ id }, 'DELETE'), 'Image deleted.');
+      } else if (act === 'up' || act === 'down') {
+        const from = media.findIndex((m) => m.id === id);
+        const to = act === 'up' ? from - 1 : from + 1;
+        if (to < 0 || to >= media.length) return;
+        const order = media.map((m) => m.id);
+        [order[from], order[to]] = [order[to], order[from]];
+        guarded(() => send({ op: 'reorder', order }), 'Order saved.');
+      }
+    });
+
+    listEl.addEventListener('change', (event) => {
+      const input = event.target as HTMLInputElement;
+      const li = input.closest('li');
+      if (!li || !input.dataset.act) return;
+      const id = li.dataset.id!;
+
+      if (input.dataset.act === 'main') {
+        guarded(() => send({ op: 'setMain', id }), 'Main image set.');
+      } else if (input.dataset.act === 'visible') {
+        guarded(() => send({ op: 'setVisible', id, visible: input.checked }), 'Visibility saved.');
+      } else if (input.dataset.act === 'alt') {
+        guarded(() => send({ op: 'setAlt', id, alt: input.value }), 'Alt text saved.');
+      }
+    });
+
+    // This section sits inside the product form, so Enter in a text field
+    // would submit the whole product. Blur instead, which fires the change
+    // handler above and saves just the alt text.
+    listEl.addEventListener('keydown', (event) => {
+      const target = event.target as HTMLElement;
+      if (event.key === 'Enter' && target.matches('input[data-act="alt"]')) {
+        event.preventDefault();
+        (target as HTMLInputElement).blur();
+      }
+    });
+
+    /* -------- drag to reorder (the ↑/↓ buttons are the keyboard path) -------- */
+
+    let dragId: string | null = null;
+
+    function bindDrag() {
+      listEl.querySelectorAll('li').forEach((li) => {
+        li.addEventListener('dragstart', () => {
+          dragId = li.dataset.id!;
+          li.classList.add('opacity-50');
+        });
+        li.addEventListener('dragend', () => {
+          dragId = null;
+          li.classList.remove('opacity-50');
+        });
+        li.addEventListener('dragover', (event) => event.preventDefault());
+        li.addEventListener('drop', (event) => {
+          event.preventDefault();
+          const targetId = li.dataset.id!;
+          if (!dragId || dragId === targetId) return;
+          const order = media.map((m) => m.id);
+          order.splice(order.indexOf(dragId), 1);
+          order.splice(order.indexOf(targetId), 0, dragId);
+          guarded(() => send({ op: 'reorder', order }), 'Order saved.');
+        });
+      });
+    }
+
+    render();
+  }
 </script>

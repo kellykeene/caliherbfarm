@@ -64,12 +64,14 @@ import { SITE } from '@/lib/constants';
 <script>
   import { clearCart } from '@/lib/cart';
 
-  // Clear the cart after successful order
-  clearCart();
+  document.addEventListener('astro:page-load', () => {
+    // Clear the cart after successful order
+    clearCart();
 
-  // Update header cart count
-  const countEl = document.getElementById('cart-count');
-  if (countEl) {
-    countEl.classList.add('hidden');
-  }
+    // Update header cart count
+    const countEl = document.getElementById('cart-count');
+    if (countEl) {
+      countEl.classList.add('hidden');
+    }
+  });
 </script>

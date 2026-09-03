@@ -1,28 +1,11 @@
 ---
 import ProductCard from './ProductCard.astro';
-
-interface Product {
-  id: string;
-  data: {
-    title: string;
-    description: string;
-    price: number;
-    priceDisplay: string;
-    image: string;
-    category: string;
-    inStock: boolean;
-    variants?: { label: string; price: number; stripePriceId: string; inStock: boolean }[];
-    isSubscription?: boolean;
-    slidingScale?: {
-      low: { price: number; stripePriceId: string };
-      middle: { price: number; stripePriceId: string };
-      high: { price: number; stripePriceId: string };
-    };
-  };
-}
+// Both call sites already pass merged catalog products, so use that type
+// directly rather than restating the shape — mainImageUrl needs the media.
+import { mainImageUrl, type CatalogProduct } from '@/lib/catalog';
 
 interface Props {
-  products: Product[];
+  products: CatalogProduct[];
   /** Unique per page — several grids can appear on one page. */
   id?: string;
   label?: string;
@@ -45,7 +28,7 @@ const { products, id = 'product-grid', label = 'Products' } = Astro.props;
         description={product.data.description}
         price={product.data.price}
         priceDisplay={product.data.priceDisplay}
-        image={product.data.image}
+        image={mainImageUrl(product)}
         category={product.data.category}
         inStock={product.data.inStock}
         variants={product.data.variants}

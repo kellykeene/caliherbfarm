@@ -25,7 +25,8 @@ const products = defineCollection({
     ]),
     price: z.number(),
     priceDisplay: z.string(),
-    image: z.string(),
+    /** Legacy fallback. Uploaded media (admin) wins when present. */
+    image: z.string().optional(),
     sku: z.string(),
     inStock: z.boolean().default(true),
     variants: z

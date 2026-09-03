@@ -8,6 +8,8 @@ import {
   findCategory,
   getStorefrontCatalog,
   getVisibleCategories,
+  mainImageUrl,
+  visibleMedia,
 } from '@/lib/catalog';
 import { SITE, productHref } from '@/lib/constants';
 import { getProductSchema } from '@/lib/schema';
@@ -26,6 +28,10 @@ if (!product) return new Response('Not found', { status: 404 });
 // Body copy still comes from the markdown entry; the admin only overrides
 // the structured fields around it.
 const { Content } = await render(product.entry);
+
+// Main image first; thumbnails only earn their place when there are several.
+const gallery = visibleMedia(product);
+const heroImage = mainImageUrl(product);
 
 const relatedSlugs = product.data.relatedProducts || [];
 const relatedProducts = relatedSlugs
@@ -67,7 +73,7 @@ const schema = getProductSchema({
   description={product.data.description}
   schema={schema}
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-right">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumbs
       items={[
         { label: 'Shop', href: '/shop' },
@@ -83,25 +89,63 @@ const schema = getProductSchema({
   <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
       <!-- Image -->
-      <div class="aspect-square rounded-[--radius-card] bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden">
-        <div class="w-full h-full flex items-center justify-center text-sage-400">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="64"
-            height="64"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <polyline points="21 15 16 10 5 21" />
-          </svg>
+      <div>
+        <div class="aspect-square rounded-[--radius-card] bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden">
+          {heroImage ? (
+            <img
+              id="product-hero"
+              src={heroImage}
+              alt={gallery[0]?.alt || product.data.title}
+              width={gallery[0]?.width || undefined}
+              height={gallery[0]?.height || undefined}
+              class="w-full h-full object-cover"
+            />
+          ) : (
+            <div class="w-full h-full flex items-center justify-center text-sage-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+            </div>
+          )}
         </div>
+
+        {gallery.length > 1 && (
+          <ul class="mt-4 grid grid-cols-5 gap-3" role="list" aria-label="More images">
+            {gallery.map((item, i) => (
+              <li>
+                <button
+                  type="button"
+                  data-thumb
+                  data-src={`/media/${item.key}`}
+                  data-alt={item.alt || product.data.title}
+                  aria-label={`Show image ${i + 1}`}
+                  class="block w-full aspect-square rounded-lg overflow-hidden border-2 border-sage-200 hover:border-forest-500 focus-visible:border-forest-500 transition-colors"
+                >
+                  <img
+                    src={`/media/${item.key}`}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    class="w-full h-full object-cover"
+                  />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <!-- Details -->
@@ -196,7 +240,7 @@ const schema = getProductSchema({
               id="add-to-cart"
               data-slug={product.id}
               data-title={product.data.title}
-              data-image={product.data.image}
+              data-image={heroImage ?? ''}
               data-is-subscription={product.data.isSubscription ? 'true' : 'false'}
               class="flex-1 min-h-[44px] px-8 py-3 bg-forest-700 text-white font-semibold rounded-[--radius-card] hover:bg-forest-900 transition-colors"
             >
@@ -236,7 +280,7 @@ const schema = getProductSchema({
             description={rel.data.description}
             price={rel.data.price}
             priceDisplay={rel.data.priceDisplay}
-            image={rel.data.image}
+            image={mainImageUrl(rel)}
             category={rel.data.category}
             inStock={rel.data.inStock}
             variants={rel.data.variants}
@@ -252,67 +296,96 @@ const schema = getProductSchema({
 <script>
   import { addToCart, getCartCount } from '@/lib/cart';
 
-  let quantity = 1;
-  const qtyDisplay = document.getElementById('qty-display');
-  const btnDecrease = document.getElementById('qty-decrease');
-  const btnIncrease = document.getElementById('qty-increase');
-  const btnAddToCart = document.getElementById('add-to-cart') as HTMLButtonElement | null;
+  function setupProductPage() {
+    const qtyDisplay = document.getElementById('qty-display');
+    const btnDecrease = document.getElementById('qty-decrease');
+    const btnIncrease = document.getElementById('qty-increase');
+    const btnAddToCart = document.getElementById('add-to-cart') as HTMLButtonElement | null;
+    if (!btnAddToCart) return;
 
-  btnDecrease?.addEventListener('click', () => {
-    if (quantity > 1) {
-      quantity--;
-      if (qtyDisplay) qtyDisplay.textContent = String(quantity);
-    }
-  });
-
-  btnIncrease?.addEventListener('click', () => {
-    quantity++;
+    // Declared per page, not per module: module scope persists across
+    // client-side navigation, so a quantity set on one product would
+    // otherwise carry over to the next one.
+    let quantity = 1;
     if (qtyDisplay) qtyDisplay.textContent = String(quantity);
-  });
 
-  btnAddToCart?.addEventListener('click', () => {
-    const slug = btnAddToCart.dataset.slug!;
-    const title = btnAddToCart.dataset.title!;
-    const image = btnAddToCart.dataset.image!;
-    const isSubscription = btnAddToCart.dataset.isSubscription === 'true';
-
-    // Get selected variant or sliding scale tier
-    const selectedRadio = document.querySelector<HTMLInputElement>(
-      'input[name="variant"]:checked, input[name="sliding-scale-tier"]:checked',
-    );
-
-    if (!selectedRadio) return;
-
-    const stripePriceId = selectedRadio.value;
-    const price = Number(selectedRadio.dataset.price);
-    const variant = selectedRadio.dataset.label || selectedRadio.dataset.tier || '';
-
-    addToCart({
-      slug,
-      title,
-      variant,
-      stripePriceId,
-      price,
-      quantity: isSubscription ? 1 : quantity,
-      image,
-      isSubscription,
+    btnDecrease?.addEventListener('click', () => {
+      if (quantity > 1) {
+        quantity--;
+        if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+      }
     });
 
-    // Feedback
-    const original = btnAddToCart.textContent;
-    btnAddToCart.textContent = 'Added!';
-    btnAddToCart.classList.add('bg-sage-600');
-    setTimeout(() => {
-      btnAddToCart.textContent = original;
-      btnAddToCart.classList.remove('bg-sage-600');
-    }, 1500);
+    btnIncrease?.addEventListener('click', () => {
+      quantity++;
+      if (qtyDisplay) qtyDisplay.textContent = String(quantity);
+    });
 
-    // Update cart count in header
-    const countEl = document.getElementById('cart-count');
-    if (countEl) {
-      const count = getCartCount();
-      countEl.textContent = String(count);
-      countEl.classList.remove('hidden');
-    }
-  });
+    btnAddToCart.addEventListener('click', () => {
+      const slug = btnAddToCart.dataset.slug!;
+      const title = btnAddToCart.dataset.title!;
+      const image = btnAddToCart.dataset.image!;
+      const isSubscription = btnAddToCart.dataset.isSubscription === 'true';
+
+      // Get selected variant or sliding scale tier
+      const selectedRadio = document.querySelector<HTMLInputElement>(
+        'input[name="variant"]:checked, input[name="sliding-scale-tier"]:checked',
+      );
+
+      if (!selectedRadio) return;
+
+      const stripePriceId = selectedRadio.value;
+      const price = Number(selectedRadio.dataset.price);
+      const variant = selectedRadio.dataset.label || selectedRadio.dataset.tier || '';
+
+      addToCart({
+        slug,
+        title,
+        variant,
+        stripePriceId,
+        price,
+        quantity: isSubscription ? 1 : quantity,
+        image,
+        isSubscription,
+      });
+
+      // Feedback
+      const original = btnAddToCart.textContent;
+      btnAddToCart.textContent = 'Added!';
+      btnAddToCart.classList.add('bg-sage-600');
+      setTimeout(() => {
+        btnAddToCart.textContent = original;
+        btnAddToCart.classList.remove('bg-sage-600');
+      }, 1500);
+
+      // Update cart count in header
+      const countEl = document.getElementById('cart-count');
+      if (countEl) {
+        const count = getCartCount();
+        countEl.textContent = String(count);
+        countEl.classList.remove('hidden');
+      }
+    });
+  }
+
+  // Thumbnails swap the hero image. Kept separate from setupProductPage so it
+  // still binds on products that have no add-to-cart button.
+  function setupGallery() {
+    const hero = document.getElementById('product-hero') as HTMLImageElement | null;
+    if (!hero) return;
+
+    document.querySelectorAll<HTMLButtonElement>('[data-thumb]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        hero.src = btn.dataset.src!;
+        hero.alt = btn.dataset.alt ?? '';
+        // Dimensions belong to the main image; clear them so a differently
+        // shaped photo isn't squashed into the previous one's ratio.
+        hero.removeAttribute('width');
+        hero.removeAttribute('height');
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', setupProductPage);
+  document.addEventListener('astro:page-load', setupGallery);
 </script>

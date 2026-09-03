@@ -11,7 +11,7 @@ export interface Announcement {
  * unreachable (e.g. `astro dev` outside the Netlify runtime).
  */
 export const DEFAULT_ANNOUNCEMENT: Announcement = {
-  message: 'Spring CSA boxes are now available! Order yours before the equinox.',
+  message: 'Spring CSA boxes are available for preorder now. Order yours before October 1st!',
   enabled: true,
   updatedAt: null,
 };
