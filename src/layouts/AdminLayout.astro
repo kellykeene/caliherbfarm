@@ -1,5 +1,6 @@
 ---
 import { SITE } from '@/lib/constants';
+import { isNoindexEnabled } from '@/lib/gate';
 import '@/styles/global.css';
 
 interface Props {
@@ -92,6 +93,29 @@ const path = Astro.url.pathname;
     </header>
 
     <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Every admin page, not just the dashboard. Leaving this on after launch
+          fails silently — the shop simply never appears in search — so the only
+          reliable reminder is one you cannot avoid walking past. */}
+      {isNoindexEnabled() && (
+        <div
+          role="status"
+          class="mb-8 rounded-[--radius-card] border-2 border-barn-500 bg-barn-50 px-5 py-4"
+        >
+          <p class="font-semibold text-barn-900 mb-1">
+            This site is hidden from Google.
+          </p>
+          <p class="text-sm text-forest-900/80">
+            Every page sends <code class="font-mono">X-Robots-Tag: noindex</code>,
+            so nothing here can appear in search results. That is intentional
+            before launch — but <strong>it will not turn itself off</strong>.
+          </p>
+          <p class="text-sm text-forest-900/80 mt-2">
+            <strong>To go live:</strong> in Netlify, open Project configuration →
+            Environment variables, delete <code class="font-mono">SITE_NOINDEX</code>,
+            then redeploy. This banner disappears once that has worked.
+          </p>
+        </div>
+      )}
       <slot />
     </main>
 

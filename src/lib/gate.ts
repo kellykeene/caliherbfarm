@@ -30,6 +30,19 @@ export function isGateEnabled(): boolean {
 }
 
 /**
+ * Pre-launch search-engine block, independent of the password gate — you can
+ * have either, both, or neither.
+ *
+ * This is the one flag that fails *silently* when forgotten: leave it on after
+ * launch and the shop simply never appears in search results, with nothing on
+ * the site to show why. Hence the banner on every admin page.
+ */
+export function isNoindexEnabled(): boolean {
+  const value = env('SITE_NOINDEX');
+  return value === 'true' || value === '1';
+}
+
+/**
  * Signs with the admin secret when there is one, so the gate cookie cannot be
  * forged from the password alone. Falls back to the password itself so the
  * gate still works if it is the only thing configured.
