@@ -7,7 +7,8 @@ interface Props {
   description: string;
   price: number;
   priceDisplay: string;
-  image: string;
+  /** Main image URL, or null when the product has no photo yet. */
+  image: string | null;
   category: string;
   inStock: boolean;
   variants?: { label: string; price: number; stripePriceId: string; inStock: boolean }[];
@@ -46,29 +47,40 @@ function formatPrice(cents: number) {
   <!-- Product Image -->
   <div class="relative group">
     <a href={href} class="block aspect-square bg-gradient-to-br from-sage-100 to-earth-100 overflow-hidden">
-      <div class="w-full h-full flex items-center justify-center text-sage-400">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="40"
-          height="40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
-        </svg>
-      </div>
+      {image ? (
+        <img
+          src={image}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          class="w-full h-full object-cover"
+        />
+      ) : (
+        <div class="w-full h-full flex items-center justify-center text-sage-400">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+        </div>
+      )}
     </a>
     {inStock && (
       <button
         type="button"
         data-quick-view
+        data-qv-image={image ?? ''}
         data-qv-title={title}
         data-qv-price={slidingScale ? `from ${formatPrice(slidingScale.low.price)}` : priceDisplay}
         data-qv-description={description}

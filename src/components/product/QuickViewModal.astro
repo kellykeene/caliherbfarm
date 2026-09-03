@@ -21,9 +21,10 @@
       </svg>
     </button>
 
-    <!-- Image placeholder -->
-    <div class="aspect-[4/3] rounded-lg bg-gradient-to-br from-sage-100 to-earth-100 mb-4 flex items-center justify-center text-sage-400">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <!-- Main product image, or the placeholder when the product has none -->
+    <div class="aspect-[4/3] rounded-lg bg-gradient-to-br from-sage-100 to-earth-100 mb-4 flex items-center justify-center text-sage-400 overflow-hidden">
+      <img id="qv-image" alt="" hidden class="w-full h-full object-cover" />
+      <svg id="qv-placeholder" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
       </svg>
     </div>
@@ -79,6 +80,18 @@
     const qvPrice = document.getElementById('qv-price');
     const qvDesc = document.getElementById('qv-description');
     const qvLink = document.getElementById('qv-view-link') as HTMLAnchorElement | null;
+    const qvImage = document.getElementById('qv-image') as HTMLImageElement | null;
+    const qvPlaceholder = document.getElementById('qv-placeholder');
+
+    const src = trigger.dataset.qvImage || '';
+    if (qvImage) {
+      qvImage.hidden = !src;
+      // Clearing src on a hidden <img> avoids re-requesting the previous
+      // product's photo behind the placeholder.
+      if (src) qvImage.src = src;
+      else qvImage.removeAttribute('src');
+    }
+    if (qvPlaceholder) qvPlaceholder.toggleAttribute('hidden', Boolean(src));
 
     if (qvTitle) qvTitle.textContent = trigger.dataset.qvTitle || '';
     if (qvPrice) qvPrice.textContent = trigger.dataset.qvPrice || '';

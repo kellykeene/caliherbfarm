@@ -45,6 +45,24 @@ export interface SlidingScale {
 export const SLIDING_SCALE_TIERS = ['low', 'middle', 'high'] as const;
 export type SlidingScaleTierKey = (typeof SLIDING_SCALE_TIERS)[number];
 
+/** Max images per product. Enforced server-side, not just in the admin UI. */
+export const MAX_MEDIA_PER_PRODUCT = 10;
+
+export interface MediaItem {
+  id: string;
+  /** Reserved so embedded video can be added later without a migration. */
+  kind: 'image';
+  /** Blob key: `<productId>/<mediaId>.<ext>`. */
+  key: string;
+  alt: string;
+  /** Hidden media stays in the admin but never reaches the storefront. */
+  visible: boolean;
+  width: number;
+  height: number;
+  bytes: number;
+  uploadedAt: string;
+}
+
 /**
  * Only the fields the admin can change. Anything absent falls through to the
  * markdown file, which stays the source of truth for body copy and history.
@@ -65,6 +83,10 @@ export interface ProductOverride {
    * existing price IDs being real.
    */
   stripeProductId?: string;
+  /** Array order is gallery order, so reordering is just reordering this. */
+  media?: MediaItem[];
+  /** Single source of truth for the tile image — two items can't both be main. */
+  mainMediaId?: string;
 }
 
 export type ProductOverrides = Record<string, ProductOverride>;
@@ -76,6 +98,8 @@ export interface CatalogProduct {
   data: CollectionEntry<'products'>['data'];
   /** Admin-only fields that have no markdown equivalent, e.g. stripeProductId. */
   override: ProductOverride;
+  /** Uploaded media in gallery order, hidden items included. */
+  media: MediaItem[];
   /** The untouched collection entry, needed to render() the body. */
   entry: CollectionEntry<'products'>;
 }
@@ -174,6 +198,7 @@ function mergeProduct(
     hidden: Boolean(override?.hidden),
     data,
     override: override ?? {},
+    media: override?.media ?? [],
     entry,
   };
 }
@@ -255,4 +280,37 @@ export function buildNavLinks(categories: Category[]): NavLink[] {
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];
+}
+
+/* ------------------------------------------------------------------ *
+ * Media accessors
+ * ------------------------------------------------------------------ */
+
+/** Public URL for a stored blob. Served by src/pages/media/[...key].ts. */
+export function mediaUrl(item: MediaItem): string {
+  return `/media/${item.key}`;
+}
+
+/** Gallery images, hidden ones removed, main image first. */
+export function visibleMedia(product: CatalogProduct): MediaItem[] {
+  const visible = product.media.filter((m) => m.visible);
+  const mainId = product.override.mainMediaId;
+  if (!mainId) return visible;
+  const main = visible.find((m) => m.id === mainId);
+  if (!main) return visible;
+  return [main, ...visible.filter((m) => m.id !== mainId)];
+}
+
+/**
+ * The tile image used in listings and the cart, or null so callers can render
+ * a placeholder.
+ *
+ * Deliberately does NOT fall back to the markdown `image` field: every seeded
+ * product points at a file under /images/products/ that has never existed, so
+ * honouring it renders a broken image where a placeholder used to be. Uploaded
+ * media is the mechanism now; the frontmatter field is vestigial.
+ */
+export function mainImageUrl(product: CatalogProduct): string | null {
+  const first = visibleMedia(product)[0];
+  return first ? mediaUrl(first) : null;
 }
