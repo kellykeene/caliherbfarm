@@ -1,0 +1,88 @@
+---
+export const prerender = false;
+
+import { isGateEnabled, safeRedirectPath } from '@/lib/gate';
+import { SITE } from '@/lib/constants';
+import '@/styles/global.css';
+
+// Nothing to gate once the password is removed — that is the launch switch.
+if (!isGateEnabled()) return Astro.redirect('/', 302);
+
+const to = safeRedirectPath(Astro.url.searchParams.get('to'));
+const failed = Astro.url.searchParams.get('error') === '1';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Belt and braces: the gate redirects crawlers anyway, but this page is
+         the one thing they can reach. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{SITE.name}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="min-h-screen flex items-center justify-center bg-plum-600 px-4 py-12">
+    <main class="w-full max-w-md text-center">
+      <img
+        src="/cali-herb-farm-logo.png"
+        alt={SITE.name}
+        width="2061"
+        height="786"
+        class="h-24 w-auto max-w-none mx-auto mb-8 drop-shadow-sm"
+      />
+
+      <div class="bg-cream rounded-[--radius-card] p-8 shadow-lg">
+        <h1 class="font-display text-2xl font-bold text-forest-900 mb-2">
+          Coming soon
+        </h1>
+        <p class="text-sm text-earth-500 mb-6">
+          We are still planting this one. Have a password? Enter it below.
+        </p>
+
+        <form method="POST" action="/api/gate" class="space-y-4">
+          <input type="hidden" name="to" value={to} />
+
+          <div class="text-left">
+            <label for="password" class="block text-sm font-medium text-forest-900 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              autofocus
+              autocomplete="current-password"
+              aria-describedby={failed ? 'gate-error' : undefined}
+              class="w-full px-4 py-3 rounded-[--radius-card] bg-white border-2 border-sage-200 focus:border-forest-500 transition-colors"
+            />
+            {failed && (
+              <p id="gate-error" class="text-sm text-barn-700 mt-2" role="alert">
+                That password did not work.
+              </p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            class="w-full min-h-[44px] px-6 py-3 bg-barn-500 text-white font-medium rounded-[--radius-card] hover:bg-barn-700 transition-colors"
+          >
+            Enter
+          </button>
+        </form>
+      </div>
+
+      <p class="text-xs text-white/70 mt-6">
+        Wholesale &amp; bulk enquiries: <a href={`mailto:${SITE.email}`} class="underline underline-offset-2">{SITE.email}</a>
+      </p>
+    </main>
+  </body>
+</html>
