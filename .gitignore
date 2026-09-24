@@ -1,5 +1,7 @@
 # Local Netlify folder
 .netlify
+# Written by Netlify's local edge-function runtime
+deno.lock
 node_modules
 dist
 .DS_Store
