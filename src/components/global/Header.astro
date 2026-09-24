@@ -4,33 +4,61 @@ import { buildNavLinks, getCategories } from '@/lib/catalog';
 
 const NAV_LINKS = buildNavLinks(await getCategories());
 
-// On desktop home the hero shows a large logo, so the nav one would be a
-// duplicate. Mobile has no hero logo, so it keeps this one at every width.
-const isHome = Astro.url.pathname === '/';
+/**
+ * How the bar sits on this page, decided by BaseLayout:
+ *   photo — floats over a background photo, so the controls go light
+ *   wash  — floats over the wash, keeping its usual dark controls
+ *   none  — the solid cream bar, for product, cart and text pages
+ *
+ * Either overlay reverts to the solid bar as soon as the page scrolls (see
+ * the script below), so nothing ever slides under a see-through bar.
+ */
+interface Props {
+  overlay?: 'photo' | 'wash' | 'none';
+  /** Home only: the hero carries the big logo, so the bar's own stays out
+   *  of the way until the hero scrolls off. */
+  heroLogo?: boolean;
+}
+
+const { overlay = 'none', heroLogo = false } = Astro.props;
 ---
 
-<header class="sticky top-0 z-40 bg-plum-600">
+<header
+  class="sticky top-0 z-40 bg-cream border-b border-sage-200"
+  data-overlay={overlay}
+  data-stuck={overlay === 'none' ? 'true' : 'false'}
+  data-hero-logo={heroLogo ? 'visible' : 'hidden'}
+>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center h-28 xl:grid xl:grid-cols-[1fr_auto_1fr] xl:gap-4">
+    <!-- lg: logo and cart hug their content so the logo can grow; xl has room
+         for equal side columns, which puts the nav at true center. -->
+    <div class="flex items-center h-28 md:h-32 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-6 xl:grid-cols-[1fr_auto_1fr] xl:gap-4">
       <!-- Logo -->
-      <a href="/" class:list={["flex shrink-0 items-center justify-self-start", isHome && "lg:hidden"]} aria-label="Cali Herb Farm — home">
+      <a
+        id="header-logo"
+        data-chrome
+        href="/"
+        class="flex min-w-0 flex-1 items-center md:flex-none lg:justify-self-start"
+        aria-label="Cali Herb Farm — home"
+      >
         <img
           src="/cali-herb-farm-logo.png"
           alt="Cali Herb Farm"
           width="2061"
           height="786"
-          class="h-22 md:h-24 w-auto max-w-none drop-shadow-sm"
+          class="w-full h-auto max-h-24 object-contain object-left md:w-auto md:h-28 md:max-h-none lg:h-24 xl:h-28 max-w-none drop-shadow-sm"
         />
       </a>
 
       <!-- Desktop Navigation -->
-      <nav aria-label="Main navigation" class="hidden xl:block xl:col-start-2 xl:justify-self-center">
+      <nav aria-label="Main navigation" class="hidden lg:block lg:col-start-2 lg:justify-self-center">
         <ul class="flex items-center gap-1" role="list">
           {NAV_LINKS.map((link) => (
             <li class="relative group">
               <a
+                data-chrome
                 href={link.href}
-                class="inline-flex items-center gap-1 px-3 py-2 text-lg font-medium text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
+                class="inline-flex items-center gap-1 px-2.5 xl:px-3 py-2 text-base xl:text-lg font-medium text-forest-900 hover:text-forest-700 hover:bg-forest-900/5 rounded-[--radius-card] transition-colors"
               >
                 {link.label}
                 {'children' in link && link.children && (
@@ -74,12 +102,13 @@ const isHome = Astro.url.pathname === '/';
       </nav>
 
       <!-- Right side: Cart + Mobile menu -->
-      <div class="flex items-center gap-2 ml-auto xl:col-start-3 xl:ml-0 xl:justify-self-end">
+      <div class="flex items-center gap-2 ml-auto lg:col-start-3 lg:ml-0 lg:justify-self-end">
         <!-- Cart icon -->
         <a
           href="/cart"
+          data-chrome
           aria-label="Shopping cart"
-          class="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
+          class="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-900 hover:text-forest-700 hover:bg-forest-900/5 rounded-[--radius-card] transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -108,10 +137,11 @@ const isHome = Astro.url.pathname === '/';
         <button
           type="button"
           id="mobile-menu-toggle"
+          data-chrome
           aria-label="Open menu"
           aria-expanded="false"
           aria-controls="mobile-menu"
-          class="xl:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-white hover:text-white/80 hover:bg-white/10 rounded-[--radius-card] transition-colors"
+          class="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-900 hover:text-forest-700 hover:bg-forest-900/5 rounded-[--radius-card] transition-colors"
         >
           <svg
             id="menu-icon-open"
@@ -155,7 +185,7 @@ const isHome = Astro.url.pathname === '/';
   <!-- Mobile Navigation -->
   <div
     id="mobile-menu"
-    class="xl:hidden hidden border-t border-sage-200 bg-cream"
+    class="lg:hidden hidden border-t border-sage-200 bg-cream"
     aria-hidden="true"
   >
     <nav aria-label="Mobile navigation" class="px-4 py-4 space-y-1">
@@ -185,11 +215,127 @@ const isHome = Astro.url.pathname === '/';
   </div>
 </header>
 
+<style>
+  header {
+    transition:
+      background-color 250ms ease,
+      border-color 250ms ease;
+  }
+
+  /* Floating over a band: no bar of its own, so the photo or wash runs to the
+     top of the window. `stuck` flips back to the solid bar on the first
+     scroll, before any of the band's text can pass beneath the controls. */
+  header[data-overlay='photo'][data-stuck='false'],
+  header[data-overlay='wash'][data-stuck='false'] {
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  /* Only over a photo do the controls change color — the wash is light, so
+     its dark controls stay as they are. [data-chrome] marks the bar-level
+     controls, leaving the dropdown and mobile panel (both cream) alone. */
+  header[data-overlay='photo'][data-stuck='false'] [data-chrome] {
+    color: var(--color-cream);
+  }
+  header[data-overlay='photo'][data-stuck='false'] [data-chrome]:hover {
+    color: #fff;
+    background-color: rgb(255 255 255 / 0.14);
+  }
+
+  /* An open mobile panel needs a bar behind it, whatever the page. */
+  header[data-menu-open='true'] {
+    background-color: var(--color-cream);
+    border-color: var(--color-sage-200);
+  }
+  header[data-menu-open='true'] [data-chrome] {
+    color: var(--color-forest-900);
+  }
+
+  /* Reserve the logo's space at all times so revealing it never reflows the
+     bar. visibility (not display) keeps it out of the tab order and the
+     accessibility tree while hidden, and still animates. */
+  #header-logo {
+    transition: opacity 300ms ease, visibility 300ms;
+  }
+
+  /* Home: the hero's own logo is on screen, so the bar's would be a second
+     copy of it a few pixels above. Tracked separately from `stuck`, since the
+     bar turns solid well before the hero logo has scrolled away. */
+  header[data-hero-logo='visible'] #header-logo {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    header,
+    #header-logo {
+      transition: none;
+    }
+  }
+</style>
+
 <script>
   // ClientRouter swaps the DOM on navigation without re-running module
   // scripts, so element listeners must be re-bound per page. astro:page-load
   // fires on the initial load and after every client-side navigation.
   let closeCurrentMenu: () => void = () => {};
+  let onScroll: (() => void) | null = null;
+  let heroLogoObserver: IntersectionObserver | null = null;
+
+  /**
+   * The bar floats over the band only while the page is at the very top, and
+   * turns solid on the first scroll — waiting for the band to leave would
+   * slide its heading and copy under see-through controls.
+   *
+   * Pages with no band (product, cart, text pages) render the solid bar from
+   * the start and bind nothing.
+   */
+  function setupHeaderOverlay() {
+    const header = document.querySelector<HTMLElement>('header');
+    if (!header) return;
+
+    // Re-bound per navigation, so drop the previous page's handlers or they
+    // keep writing to a header that is no longer on screen.
+    if (onScroll) window.removeEventListener('scroll', onScroll);
+    onScroll = null;
+    heroLogoObserver?.disconnect();
+    heroLogoObserver = null;
+
+    setupHeroLogo(header);
+
+    const band = document.querySelector('[data-page-band]');
+    if (!band || header.dataset.overlay === 'none') {
+      header.dataset.stuck = 'true';
+      return;
+    }
+
+    const update = () => {
+      header.dataset.stuck = window.scrollY > 0 ? 'true' : 'false';
+    };
+    onScroll = update;
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+  }
+
+  /**
+   * Home only: the bar's logo appears once the hero's big logo has passed
+   * beneath the bar, so there is never a second copy of it on screen.
+   */
+  function setupHeroLogo(header: HTMLElement) {
+    const heroLogo = document.getElementById('hero-logo');
+    if (!heroLogo) {
+      header.dataset.heroLogo = 'hidden';
+      return;
+    }
+
+    heroLogoObserver = new IntersectionObserver(
+      ([entry]) => {
+        header.dataset.heroLogo = entry.isIntersecting ? 'visible' : 'hidden';
+      },
+      { rootMargin: `-${header.offsetHeight}px 0px 0px 0px`, threshold: 0 },
+    );
+    heroLogoObserver.observe(heroLogo);
+  }
 
   function setupMobileMenu() {
     const toggle = document.getElementById('mobile-menu-toggle');
@@ -199,6 +345,7 @@ const isHome = Astro.url.pathname === '/';
     if (!toggle || !menu) return;
 
     function openMenu() {
+      toggle!.closest('header')!.dataset.menuOpen = 'true';
       toggle!.setAttribute('aria-expanded', 'true');
       toggle!.setAttribute('aria-label', 'Close menu');
       menu!.classList.remove('hidden');
@@ -212,6 +359,7 @@ const isHome = Astro.url.pathname === '/';
     }
 
     function closeMenu() {
+      toggle!.closest('header')!.dataset.menuOpen = 'false';
       toggle!.setAttribute('aria-expanded', 'false');
       toggle!.setAttribute('aria-label', 'Open menu');
       menu!.classList.add('hidden');
@@ -260,4 +408,5 @@ const isHome = Astro.url.pathname === '/';
   });
 
   document.addEventListener('astro:page-load', setupMobileMenu);
+  document.addEventListener('astro:page-load', setupHeaderOverlay);
 </script>

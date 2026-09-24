@@ -1,0 +1,644 @@
+---
+export const prerender = false;
+
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import PhotoSoften from '@/components/global/PhotoSoften.astro';
+import { guardPage } from '@/lib/auth';
+import { getCategories } from '@/lib/catalog';
+import {
+  FIXED_PAGES,
+  categoryPageId,
+  getBackgrounds,
+  getTweaks,
+  resolveBackground,
+  DEFAULT_SOFTEN,
+  scrimFor,
+} from '@/lib/backgrounds';
+import { DEFAULT_MENU_STRIP, menuStripOpacity } from '@/lib/menu-strip';
+
+const denied = guardPage(Astro);
+if (denied) return denied;
+
+const [categories, saved, tweaks] = await Promise.all([
+  getCategories(),
+  getBackgrounds(),
+  getTweaks(),
+]);
+
+/** One row per page, in the order they appear on the site. */
+const rows = [
+  ...FIXED_PAGES.map((page) => ({
+    id: page.id,
+    label: page.label,
+    path: page.path,
+    note: page.note,
+    group: 'Pages',
+  })),
+  ...categories.map((category) => ({
+    id: categoryPageId(category.slug),
+    label: category.label,
+    path: `/shop/${category.slug}`,
+    note: category.hidden ? 'Hidden from the shop' : null,
+    group: 'Shop categories',
+  })),
+].map((row) => {
+  const background = resolveBackground(row.id, saved, tweaks);
+  return {
+    ...row,
+    background,
+    uploaded: Boolean(saved[row.id]),
+    scrim: scrimFor(row.id),
+  };
+});
+
+const FOCAL_CHOICES = [
+  { value: 'center 20%', label: 'Top of the photo' },
+  { value: 'center 35%', label: 'Upper third' },
+  { value: 'center 50%', label: 'Middle' },
+  { value: 'center 65%', label: 'Lower third' },
+  { value: 'center 80%', label: 'Bottom of the photo' },
+];
+
+const groups = ['Pages', 'Shop categories'];
+---
+
+<AdminLayout title="Page backgrounds">
+  <h1 class="font-display text-3xl font-bold text-forest-900 mb-2">Page backgrounds</h1>
+  <p class="text-earth-500 mb-8 text-sm max-w-3xl">
+    The photo behind each page's title. A page with no photo shows the wash — a
+    soft gradient in the farm colors — which is a finished look, not a
+    placeholder. Photos are cropped to a wide band, so pick which part of a tall
+    photo stays visible, and set how bright it shows — darker keeps the white
+    text easier to read.
+  </p>
+
+  <p
+    id="bg-status"
+    role="status"
+    aria-live="polite"
+    class="mb-6 text-sm text-earth-500 min-h-[1.25rem]"
+  >
+  </p>
+
+  {groups.map((group) => (
+    <section class="mb-10" aria-labelledby={`group-${group.replace(/\s+/g, '-')}`}>
+      <h2
+        id={`group-${group.replace(/\s+/g, '-')}`}
+        class="font-display text-lg font-bold text-forest-900 mb-3"
+      >
+        {group}
+      </h2>
+
+      <div class="space-y-4">
+        {rows
+          .filter((row) => row.group === group)
+          .map((row) => (
+            <article
+              class="bg-white rounded-[--radius-card] border border-sage-200 p-5"
+              data-page={row.id}
+              data-uploaded={String(row.uploaded)}
+              data-default-tint={row.scrim.defaultTint}
+              data-default-soften={DEFAULT_SOFTEN}
+              data-default-menu={DEFAULT_MENU_STRIP}
+            >
+              <div class="grid gap-5 md:grid-cols-[260px_1fr]">
+                <!-- Band-shaped preview, same crop the site will use -->
+                <!-- Blur and menu strip scaled down to match the preview's size;
+                     home's softened patch is centered, as on the site. -->
+                <div
+                  data-preview
+                  class:list={[
+                    'relative aspect-[16/7] rounded-[--radius-card] overflow-hidden border border-sage-200 bg-earth-100 [--soften-blur:6px] [--menu-solid:11px] [--menu-fade:27px]',
+                    row.id === 'home' && '[--soften-at:50%_62%] [--soften-size:48%_62%]',
+                  ]}
+                  style={`--soften-strength: ${(row.background?.soften ?? DEFAULT_SOFTEN) / 100}`}
+                >
+                  {row.background ? (
+                    <img
+                      data-preview-img
+                      src={row.background.src}
+                      alt=""
+                      class="absolute inset-0 w-full h-full object-cover"
+                      style={`object-position: ${row.background.focal}`}
+                    />
+                  ) : (
+                    <div data-preview-wash class="absolute inset-0 bg-page-wash"></div>
+                  )}
+                  <!-- The site's own scrim, so the brightness preview is exact. -->
+                  <div
+                    class:list={['absolute inset-0', row.scrim.gradient]}
+                    style={`opacity: ${(row.background?.tint ?? row.scrim.defaultTint) / 100}`}
+                    aria-hidden="true"
+                    hidden={!row.background}
+                    data-preview-scrim
+                  >
+                  </div>
+                  <div
+                    class="absolute inset-0 menu-strip"
+                    style={`opacity: ${row.background ? menuStripOpacity(row.background.menu) : 0}`}
+                    aria-hidden="true"
+                    data-preview-menu
+                  >
+                  </div>
+                  <PhotoSoften hidden={!row.background || row.background.soften === 0} />
+                  <!-- A stand-in for the floating menu, so the strip behind it has
+                       something to be judged against. -->
+                  <div
+                    data-preview-nav
+                    hidden={!row.background}
+                    aria-hidden="true"
+                    class="absolute top-2 inset-x-0 flex justify-center gap-2 text-[7px] font-medium text-white"
+                  >
+                    <span>Home</span><span>Shop</span><span>Harvest Calendar</span><span>About</span><span>Contact</span>
+                  </div>
+                  <span
+                    class:list={[
+                      'absolute left-3 bottom-2 font-display font-bold text-lg drop-shadow',
+                      row.background ? 'text-white' : 'text-forest-900',
+                      row.background && row.background.soften > 0 && 'photo-soften-text',
+                    ]}
+                    data-preview-title
+                  >
+                    {row.label}
+                  </span>
+                </div>
+
+                <div>
+                  <div class="flex flex-wrap items-center gap-3 mb-1">
+                    <h3 class="font-display font-bold text-forest-900">{row.label}</h3>
+                    <span
+                      data-state
+                      class="text-xs font-medium px-2 py-1 rounded-full bg-sage-100 text-forest-700"
+                    >
+                      {row.uploaded
+                        ? 'Your photo'
+                        : row.background
+                          ? 'Built-in photo'
+                          : 'Wash — no photo'}
+                    </span>
+                  </div>
+                  <!-- The address, because some labels overlap: Harvest Calendar and
+                       the Fresh Herbs shop category are easy to mix up. -->
+                  <a
+                    href={row.path}
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-block text-xs text-forest-700 hover:text-forest-900 underline underline-offset-2 mb-1"
+                  >
+                    View page: {row.path}
+                  </a>
+                  {row.note && <p class="text-xs text-earth-500 mb-3">{row.note}</p>}
+
+                  <div class="flex flex-wrap items-center gap-3 mt-3">
+                    <label
+                      class="min-h-[44px] inline-flex items-center px-4 text-sm font-semibold bg-forest-700 text-white rounded-[--radius-card] hover:bg-forest-900 transition-colors cursor-pointer"
+                    >
+                      {row.uploaded ? 'Replace photo' : 'Upload photo'}
+                      <input type="file" accept="image/*" data-file class="sr-only" />
+                    </label>
+                    <button
+                      type="button"
+                      data-remove
+                      hidden={!row.uploaded}
+                      class="min-h-[44px] px-4 text-sm font-medium text-barn-700 hover:text-barn-900 hover:bg-barn-50 rounded-[--radius-card] transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div class="grid gap-4 sm:grid-cols-2 mt-4">
+                    <div>
+                      <label
+                        class="block text-sm font-medium text-forest-900 mb-2"
+                        for={`alt-${row.id}`}
+                      >
+                        Photo description
+                      </label>
+                      <input
+                        id={`alt-${row.id}`}
+                        type="text"
+                        data-alt
+                        value={row.uploaded ? row.background?.alt : ''}
+                        placeholder={
+                          row.uploaded
+                            ? 'What the photo shows'
+                            : 'Upload a photo to describe it'
+                        }
+                        disabled={!row.uploaded}
+                        maxlength="200"
+                        class="w-full px-3 py-2.5 rounded-[--radius-card] bg-white border-2 border-sage-200 text-forest-900 placeholder:text-earth-300 focus:border-forest-500 transition-colors disabled:bg-earth-50 disabled:text-earth-300"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="block text-sm font-medium text-forest-900 mb-2"
+                        for={`focal-${row.id}`}
+                      >
+                        Keep this part in view
+                      </label>
+                      <select
+                        id={`focal-${row.id}`}
+                        data-focal
+                        disabled={!row.background}
+                        class="w-full px-3 py-2.5 rounded-[--radius-card] bg-white border-2 border-sage-200 text-forest-900 focus:border-forest-500 transition-colors disabled:bg-earth-50 disabled:text-earth-300"
+                      >
+                        {FOCAL_CHOICES.map((choice) => (
+                          <option
+                            value={choice.value}
+                            selected={row.background?.focal === choice.value}
+                          >
+                            {choice.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="mt-4" data-brightness hidden={!row.background}>
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                      <label
+                        class="block text-sm font-medium text-forest-900"
+                        for={`tint-${row.id}`}
+                      >
+                        Photo brightness
+                      </label>
+                      <button
+                        type="button"
+                        data-tint-reset
+                        hidden={!row.background || row.background.tint === row.scrim.defaultTint}
+                        class="text-sm font-medium text-forest-700 hover:text-forest-900 underline underline-offset-2"
+                      >
+                        Reset to default
+                      </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs text-earth-500" aria-hidden="true">Darker</span>
+                      <!-- Stores the scrim's opacity; the slider shows its inverse
+                           so dragging right means brighter. -->
+                      <input
+                        id={`tint-${row.id}`}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        data-tint
+                        value={100 - (row.background?.tint ?? row.scrim.defaultTint)}
+                        class="flex-1 accent-forest-700 min-h-[44px]"
+                      />
+                      <span class="text-xs text-earth-500" aria-hidden="true">Lighter</span>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3 mt-4 mb-1">
+                      <label
+                        class="block text-sm font-medium text-forest-900"
+                        for={`soften-${row.id}`}
+                      >
+                        Soften behind the text
+                      </label>
+                      <button
+                        type="button"
+                        data-soften-reset
+                        hidden={!row.background || row.background.soften === DEFAULT_SOFTEN}
+                        class="text-sm font-medium text-forest-700 hover:text-forest-900 underline underline-offset-2"
+                      >
+                        Reset to default
+                      </button>
+                    </div>
+                    <p class="text-xs text-earth-500 mb-1" id={`soften-help-${row.id}`}>
+                      Blurs and darkens the photo right behind the title so it is easier
+                      to read. The rest of the photo stays sharp.
+                    </p>
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs text-earth-500" aria-hidden="true">Off</span>
+                      <input
+                        id={`soften-${row.id}`}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        data-soften-strength
+                        value={row.background?.soften ?? DEFAULT_SOFTEN}
+                        aria-describedby={`soften-help-${row.id}`}
+                        class="flex-1 accent-forest-700 min-h-[44px]"
+                      />
+                      <span class="text-xs text-earth-500" aria-hidden="true">Stronger</span>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3 mt-4 mb-1">
+                      <label
+                        class="block text-sm font-medium text-forest-900"
+                        for={`menu-${row.id}`}
+                      >
+                        Darken behind the menu
+                      </label>
+                      <button
+                        type="button"
+                        data-menu-reset
+                        hidden={!row.background || row.background.menu === DEFAULT_MENU_STRIP}
+                        class="text-sm font-medium text-forest-700 hover:text-forest-900 underline underline-offset-2"
+                      >
+                        Reset to default
+                      </button>
+                    </div>
+                    <p class="text-xs text-earth-500 mb-1" id={`menu-help-${row.id}`}>
+                      Adds a dark strip across the top of the photo so the menu stays
+                      readable, however bright the photo is set.
+                    </p>
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs text-earth-500" aria-hidden="true">Off</span>
+                      <input
+                        id={`menu-${row.id}`}
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        data-menu
+                        value={row.background?.menu ?? DEFAULT_MENU_STRIP}
+                        aria-describedby={`menu-help-${row.id}`}
+                        class="flex-1 accent-forest-700 min-h-[44px]"
+                      />
+                      <span class="text-xs text-earth-500" aria-hidden="true">Darker</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+      </div>
+    </section>
+  ))}
+</AdminLayout>
+
+<script>
+  import { menuStripOpacity } from '@/lib/menu-strip';
+
+  const status = document.getElementById('bg-status')!;
+
+  function setStatus(text: string, tone: 'busy' | 'ok' | 'error') {
+    status.textContent = text;
+    status.className =
+      'mb-6 text-sm min-h-[1.25rem] ' +
+      (tone === 'error'
+        ? 'text-barn-700 font-medium'
+        : tone === 'ok'
+          ? 'text-forest-700'
+          : 'text-earth-500');
+  }
+
+  /**
+   * Banner photos span the full width of the page, so they keep more pixels
+   * than a product shot — but still shrink here rather than pushing a 12 MP
+   * phone photo through the upload limit.
+   */
+  async function shrink(file: File): Promise<{ file: File; width: number; height: number }> {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext('2d')!.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+
+    // toBlob silently falls back to PNG where WebP encoding is unsupported,
+    // so check what actually came back rather than trusting the request.
+    let blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', 0.82));
+    if (!blob || blob.type !== 'image/webp') {
+      blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85));
+    }
+    if (!blob) throw new Error('Could not process that image.');
+
+    const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+    return { file: new File([blob], `banner.${ext}`, { type: blob.type }), width: w, height: h };
+  }
+
+  interface Painted {
+    src: string;
+    focal: string;
+    tint: number;
+    soften: number;
+    menu: number;
+  }
+
+  /** Swaps a row between its three states without a page reload. */
+  function paint(row: HTMLElement, background: Painted | null) {
+    const preview = row.querySelector<HTMLElement>('[data-preview]')!;
+    const scrim = row.querySelector<HTMLElement>('[data-preview-scrim]')!;
+    const title = row.querySelector<HTMLElement>('[data-preview-title]')!;
+    const uploaded = row.dataset.uploaded === 'true';
+
+    let img = row.querySelector<HTMLImageElement>('[data-preview-img]');
+    let wash = row.querySelector<HTMLElement>('[data-preview-wash]');
+
+    if (background) {
+      if (!img) {
+        img = document.createElement('img');
+        img.dataset.previewImg = '';
+        img.alt = '';
+        img.className = 'absolute inset-0 w-full h-full object-cover';
+        preview.prepend(img);
+      }
+      // Cache-busting: a replacement gets a new key, but a crop change does not.
+      img.src = background.src;
+      img.style.objectPosition = background.focal;
+      wash?.remove();
+      scrim.hidden = false;
+      scrim.style.opacity = String(background.tint / 100);
+      row.querySelector<HTMLInputElement>('[data-tint]')!.value = String(100 - background.tint);
+      row.querySelector<HTMLButtonElement>('[data-tint-reset]')!.hidden =
+        background.tint === Number(row.dataset.defaultTint);
+      paintSoften(row, background.soften);
+      paintMenu(row, background.menu);
+      row.querySelector<HTMLElement>('[data-preview-nav]')!.hidden = false;
+      title.classList.add('text-white');
+      title.classList.remove('text-forest-900');
+    } else {
+      img?.remove();
+      if (!wash) {
+        wash = document.createElement('div');
+        wash.dataset.previewWash = '';
+        wash.className = 'absolute inset-0 bg-page-wash';
+        preview.prepend(wash);
+      }
+      scrim.hidden = true;
+      paintSoften(row, 0);
+      row.querySelector<HTMLElement>('[data-preview-menu]')!.style.opacity = '0';
+      row.querySelector<HTMLElement>('[data-preview-nav]')!.hidden = true;
+      title.classList.remove('text-white');
+      title.classList.add('text-forest-900');
+    }
+
+    row.querySelector<HTMLElement>('[data-state]')!.textContent = uploaded
+      ? 'Your photo'
+      : background
+        ? 'Built-in photo'
+        : 'Wash — no photo';
+
+    const label = row.querySelector<HTMLElement>('label.cursor-pointer')!;
+    label.childNodes[0].textContent = uploaded ? 'Replace photo ' : 'Upload photo ';
+    row.querySelector<HTMLButtonElement>('[data-remove]')!.hidden = !uploaded;
+    row.querySelector<HTMLInputElement>('[data-alt]')!.disabled = !uploaded;
+    row.querySelector<HTMLSelectElement>('[data-focal]')!.disabled = !background;
+    row.querySelector<HTMLElement>('[data-brightness]')!.hidden = !background;
+  }
+
+  /** Reads the slider, so it also previews a drag that has not been saved yet. */
+  function previewMenu(row: HTMLElement) {
+    const strength = Number(row.querySelector<HTMLInputElement>('[data-menu]')!.value);
+    row.querySelector<HTMLElement>('[data-preview-menu]')!.style.opacity = String(
+      menuStripOpacity(strength),
+    );
+  }
+
+  function paintMenu(row: HTMLElement, strength: number) {
+    row.querySelector<HTMLInputElement>('[data-menu]')!.value = String(strength);
+    row.querySelector<HTMLButtonElement>('[data-menu-reset]')!.hidden =
+      strength === Number(row.dataset.defaultMenu);
+    previewMenu(row);
+  }
+
+  /** Preview only; the slider itself is set separately so a drag isn't fought. */
+  function previewSoften(row: HTMLElement, strength: number) {
+    row.querySelector<HTMLElement>('[data-preview]')!.style.setProperty(
+      '--soften-strength',
+      String(strength / 100),
+    );
+    row.querySelector<HTMLElement>('[data-soften]')!.hidden = strength === 0;
+    row
+      .querySelector<HTMLElement>('[data-preview-title]')!
+      .classList.toggle('photo-soften-text', strength > 0);
+  }
+
+  function paintSoften(row: HTMLElement, strength: number) {
+    previewSoften(row, strength);
+    row.querySelector<HTMLInputElement>('[data-soften-strength]')!.value = String(strength);
+    row.querySelector<HTMLButtonElement>('[data-soften-reset]')!.hidden =
+      strength === Number(row.dataset.defaultSoften);
+  }
+
+  async function send(url: string, init: RequestInit) {
+    const res = await fetch(url, init);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'That did not save.');
+    return data;
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-page]').forEach((row) => {
+    const pageId = row.dataset.page!;
+    const file = row.querySelector<HTMLInputElement>('[data-file]')!;
+    const alt = row.querySelector<HTMLInputElement>('[data-alt]')!;
+    const focal = row.querySelector<HTMLSelectElement>('[data-focal]')!;
+    const remove = row.querySelector<HTMLButtonElement>('[data-remove]')!;
+    const tint = row.querySelector<HTMLInputElement>('[data-tint]')!;
+    const tintReset = row.querySelector<HTMLButtonElement>('[data-tint-reset]')!;
+    const scrim = row.querySelector<HTMLElement>('[data-preview-scrim]')!;
+    const soften = row.querySelector<HTMLInputElement>('[data-soften-strength]')!;
+    const softenReset = row.querySelector<HTMLButtonElement>('[data-soften-reset]')!;
+    const menu = row.querySelector<HTMLInputElement>('[data-menu]')!;
+    const menuReset = row.querySelector<HTMLButtonElement>('[data-menu-reset]')!;
+
+    file.addEventListener('change', async () => {
+      const chosen = file.files?.[0];
+      file.value = '';
+      if (!chosen) return;
+
+      try {
+        setStatus('Uploading…', 'busy');
+        const shrunk = await shrink(chosen);
+        const form = new FormData();
+        form.append('pageId', pageId);
+        form.append('file', shrunk.file);
+        form.append('alt', alt.value);
+        form.append('focal', focal.value);
+        form.append('width', String(shrunk.width));
+        form.append('height', String(shrunk.height));
+
+        const { item } = await send('/api/admin/backgrounds', { method: 'POST', body: form });
+        row.dataset.uploaded = 'true';
+        // A new photo starts from the default brightness (the server clears
+        // the old photo's adjustments).
+        paint(row, {
+          src: `/media/${item.key}`,
+          focal: item.focal,
+          tint: Number(row.dataset.defaultTint),
+          soften: Number(row.dataset.defaultSoften),
+          menu: Number(row.dataset.defaultMenu),
+        });
+        alt.value = item.alt;
+        focal.value = item.focal;
+        setStatus('Photo saved. It is live on the site now.', 'ok');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Upload failed.', 'error');
+      }
+    });
+
+    async function patch(changes: Record<string, string | number | null>, okText: string) {
+      try {
+        setStatus('Saving…', 'busy');
+        const { background } = await send('/api/admin/backgrounds', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pageId, ...changes }),
+        });
+        paint(row, background);
+        setStatus(okText, 'ok');
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'That did not save.', 'error');
+      }
+    }
+
+    alt.addEventListener('change', () => patch({ alt: alt.value }, 'Description saved.'));
+    focal.addEventListener('change', () => patch({ focal: focal.value }, 'Crop saved.'));
+
+    // Preview while dragging; save once on release.
+    tint.addEventListener('input', () => {
+      scrim.style.opacity = String((100 - Number(tint.value)) / 100);
+    });
+    tint.addEventListener('change', () =>
+      patch({ tint: 100 - Number(tint.value) }, 'Brightness saved.'),
+    );
+    tintReset.addEventListener('click', () =>
+      patch({ tint: null }, 'Brightness reset to the default.'),
+    );
+
+    soften.addEventListener('input', () => previewSoften(row, Number(soften.value)));
+    soften.addEventListener('change', () =>
+      patch(
+        { soften: Number(soften.value) },
+        Number(soften.value) === 0 ? 'Softening turned off.' : 'Softening saved.',
+      ),
+    );
+    softenReset.addEventListener('click', () =>
+      patch({ soften: null }, 'Softening reset to the default.'),
+    );
+
+    menu.addEventListener('input', () => previewMenu(row));
+    menu.addEventListener('change', () =>
+      patch(
+        { menu: Number(menu.value) },
+        Number(menu.value) === 0 ? 'Menu darkening turned off.' : 'Menu darkening saved.',
+      ),
+    );
+    menuReset.addEventListener('click', () =>
+      patch({ menu: null }, 'Menu darkening reset to the default.'),
+    );
+
+    remove.addEventListener('click', async () => {
+      try {
+        setStatus('Removing…', 'busy');
+        await send('/api/admin/backgrounds', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pageId }),
+        });
+        // The server falls back to the built-in photo, if the page has one,
+        // so reload rather than guess which of the two states this row lands in.
+        window.location.reload();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'That did not save.', 'error');
+      }
+    });
+  });
+</script>

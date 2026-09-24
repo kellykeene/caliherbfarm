@@ -8,23 +8,15 @@ import { getLocalBusinessSchema } from '@/lib/schema';
   title="About the Farm"
   description="Learn about Cali Herb Farm — our story, growing philosophy, and commitment to sustainable medicinal herb farming in California."
   schema={getLocalBusinessSchema()}
+  pageId="about"
+  band={{
+    title: 'About the Farm',
+    intro: 'Farm Fresh · Herbalist Grown · Medicinal Plants',
+  }}
 >
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumbs items={[{ label: 'About the Farm', href: '/about' }]} />
   </div>
-
-  <!-- Page Header -->
-  <section aria-labelledby="about-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-    <h1
-      id="about-heading"
-      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-4"
-    >
-      About the Farm
-    </h1>
-    <p class="text-lg text-earth-500 max-w-2xl">
-      Farm Fresh &bull; Herbalist Grown &bull; Medicinal Plants
-    </p>
-  </section>
 
   <!-- Story Section -->
   <section aria-labelledby="story-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">

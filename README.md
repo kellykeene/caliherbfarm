@@ -71,9 +71,22 @@ cp .env.example .env
 npm run dev        # http://localhost:4321
 ```
 
+`npm run dev` includes a local Netlify Blobs emulator (via `@astrojs/netlify`),
+so product photos, page backgrounds, categories, and the announcement all read
+and save against the local store in `.netlify/blobs-serve`. That store is
+separate from production: anything uploaded through the local admin exists only
+on this machine.
+
+If product tiles suddenly show placeholders locally, the dev server's blob
+emulator has died. It does not survive Vite's automatic in-place restart, which
+fires whenever `package.json`, `.env`, or `astro.config.mjs` changes — the log
+shows "Multiple instances of @netlify/vite-plugin have been loaded" when it
+happens. Stop every dev server and start a fresh `npm run dev`. Avoid `netlify dev`: it
+injects its own blob context, and the storefront reads come back empty.
+
 | Script | Does |
 | --- | --- |
-| `npm run dev` | Local dev server with HMR |
+| `npm run dev` | Local dev server with HMR and local blob store |
 | `npm run build` | Production build into `dist/` |
 | `npm run preview` | Serve the production build locally |
 

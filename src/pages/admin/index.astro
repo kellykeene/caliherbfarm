@@ -5,16 +5,21 @@ import AdminLayout from '@/layouts/AdminLayout.astro';
 import { guardPage } from '@/lib/auth';
 import { getCatalog, getCategories } from '@/lib/catalog';
 import { readAnnouncement } from '@/lib/announcement';
+import { FIXED_PAGES, getBackgrounds } from '@/lib/backgrounds';
 import { isStripeConfigured } from '@/lib/stripe';
 
 const denied = guardPage(Astro);
 if (denied) return denied;
 
-const [products, categories, announcement] = await Promise.all([
+const [products, categories, announcement, backgrounds] = await Promise.all([
   getCatalog(),
   getCategories(),
   readAnnouncement(),
+  getBackgrounds(),
 ]);
+
+const bannerPages = FIXED_PAGES.length + categories.length;
+const uploadedBanners = Object.keys(backgrounds).length;
 
 const hiddenProducts = products.filter((p) => p.hidden).length;
 const hiddenCategories = categories.filter((c) => c.hidden).length;
@@ -46,6 +51,15 @@ const cards = [
     detail: announcement.enabled
       ? announcement.message.slice(0, 60)
       : 'Banner is hidden',
+  },
+  {
+    href: '/admin/backgrounds',
+    title: 'Page backgrounds',
+    stat: `${uploadedBanners}/${bannerPages}`,
+    detail:
+      uploadedBanners === bannerPages
+        ? 'Every page has your own photo'
+        : 'The rest use a built-in photo or the wash',
   },
 ];
 ---

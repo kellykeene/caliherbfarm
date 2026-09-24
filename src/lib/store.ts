@@ -21,6 +21,22 @@ export async function writeJson(key: string, value: unknown): Promise<void> {
   await getStore(STORE).setJSON(key, value);
 }
 
+/**
+ * True when the failure is "there is no blob store here" rather than a real
+ * storage error — most often a long-running dev server whose blob emulator
+ * has died. Reads hide this behind their fallbacks; writes cannot, so the
+ * admin says which of the two it is instead of a generic failure.
+ */
+export function isBlobsUnavailable(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('has not been configured to use Netlify Blobs')
+  );
+}
+
+export const BLOBS_UNAVAILABLE_MESSAGE =
+  'This dev server has lost its blob storage, so nothing can be saved. Stop every dev server and start a fresh `npm run dev`.';
+
 export async function deleteKey(key: string): Promise<void> {
   await getStore(STORE).delete(key);
 }
@@ -29,6 +45,8 @@ export const KEYS = {
   announcement: 'announcement',
   categories: 'categories',
   productOverrides: 'product-overrides',
+  pageBackgrounds: 'page-backgrounds',
+  pageBackgroundTweaks: 'page-background-tweaks',
 } as const;
 
 /* ------------------------------------------------------------------ *

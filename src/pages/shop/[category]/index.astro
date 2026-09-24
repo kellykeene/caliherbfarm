@@ -11,6 +11,7 @@ import {
   productsIn,
 } from '@/lib/catalog';
 import { SITE, productHref } from '@/lib/constants';
+import { categoryPageId } from '@/lib/backgrounds';
 
 const { category: slug } = Astro.params;
 
@@ -42,6 +43,8 @@ const itemListSchema = {
   title={category.label}
   description={category.blurb}
   schema={itemListSchema}
+  pageId={categoryPageId(category.slug)}
+  band={{ kicker: 'Shop', title: category.label, intro: category.blurb }}
 >
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumbs
@@ -52,15 +55,7 @@ const itemListSchema = {
     />
   </div>
 
-  <section aria-labelledby="category-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-    <h1
-      id="category-heading"
-      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-3"
-    >
-      {category.label}
-    </h1>
-    <p class="text-lg text-earth-500 max-w-2xl mb-8">{category.blurb}</p>
-
+  <section aria-label={category.label} class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
     <CategoryNav active={category.slug} />
 
     {products.length > 0 ? (
@@ -79,7 +74,7 @@ const itemListSchema = {
           <HerbBulletinSignup />
         </div>
         <a
-          href="/fresh-herbs"
+          href="/harvest-calendar"
           class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 border border-forest-700 text-forest-700 text-sm font-medium rounded-[--radius-card] hover:bg-forest-700 hover:text-white transition-colors"
         >
           See the harvest calendar

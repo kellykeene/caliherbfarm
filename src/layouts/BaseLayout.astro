@@ -3,11 +3,13 @@ import { ClientRouter } from 'astro:transitions';
 import SkipToContent from '@/components/global/SkipToContent.astro';
 import AnnouncementBanner from '@/components/global/AnnouncementBanner.astro';
 import Header from '@/components/global/Header.astro';
+import PageBand from '@/components/global/PageBand.astro';
 import Footer from '@/components/global/Footer.astro';
 import QuickViewModal from '@/components/product/QuickViewModal.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { SITE } from '@/lib/constants';
 import { getOrganizationSchema } from '@/lib/schema';
+import { getBackground } from '@/lib/backgrounds';
 import '@/styles/global.css';
 
 interface Props {
@@ -17,6 +19,18 @@ interface Props {
   ogImage?: string;
   /** Keep this page out of search results (admin pages). */
   noindex?: boolean;
+  /**
+   * Which background this page uses, as named in the admin (a fixed page id
+   * like 'about', or `category:<slug>`). With `band`, the layout renders the
+   * page's title over that background and floats the header on top of it.
+   * Pages that pass neither — product, cart, the text pages — keep the solid
+   * header, and home supplies its own band through Hero.
+   */
+  pageId?: string;
+  band?: { kicker?: string; title: string; intro?: string };
+  /** Home: the hero is the band, so the layout only sets the header up. */
+  heroBand?: 'photo' | 'wash';
+  heroLogo?: boolean;
 }
 
 const {
@@ -25,7 +39,14 @@ const {
   schema,
   ogImage = '/og-image.jpg',
   noindex = false,
+  pageId,
+  band,
+  heroBand,
+  heroLogo = false,
 } = Astro.props;
+
+const background = band && pageId ? await getBackground(pageId) : null;
+const overlay = heroBand ?? (band ? (background ? 'photo' : 'wash') : 'none');
 
 const pageTitle = title === 'Home' ? SITE.name : `${title} | ${SITE.name}`;
 const canonicalUrl = new URL(Astro.url.pathname, SITE.url);
@@ -80,8 +101,16 @@ const canonicalUrl = new URL(Astro.url.pathname, SITE.url);
   <body class="min-h-screen flex flex-col">
     <SkipToContent />
     <AnnouncementBanner />
-    <Header />
+    <Header overlay={overlay} heroLogo={heroLogo} />
     <main id="main-content" class="flex-1">
+      {band && (
+        <PageBand
+          background={background}
+          kicker={band.kicker}
+          title={band.title}
+          intro={band.intro}
+        />
+      )}
       <slot />
     </main>
     <Footer />
