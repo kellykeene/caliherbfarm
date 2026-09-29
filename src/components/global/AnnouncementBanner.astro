@@ -48,7 +48,7 @@
     const dismiss = document.getElementById('dismiss-banner');
     if (!banner || !messageEl || !dismiss) return;
 
-    let data: { message?: string; enabled?: boolean };
+    let data: { message?: string; enabled?: boolean; updatedAt?: string | null };
     try {
       const res = await fetch('/api/announcement', { cache: 'no-store' });
       if (!res.ok) return;
@@ -61,16 +61,18 @@
     const message = (data.message ?? '').trim();
     if (!data.enabled || !message) return;
 
-    // Dismissal is keyed to the message itself, so a NEW announcement shows up
-    // again for someone who dismissed the previous one.
-    if (localStorage.getItem(DISMISS_KEY) === message) return;
+    // Dismissal is keyed to this particular save of the message, so a new
+    // announcement, or saving it again in the admin (e.g. turning it back on),
+    // shows it again for someone who dismissed it.
+    const dismissId = `${data.updatedAt ?? ''}|${message}`;
+    if (localStorage.getItem(DISMISS_KEY) === dismissId) return;
 
     messageEl.textContent = message;
     banner.hidden = false;
 
     dismiss.addEventListener('click', () => {
       banner.hidden = true;
-      localStorage.setItem(DISMISS_KEY, message);
+      localStorage.setItem(DISMISS_KEY, dismissId);
     });
   }
 
