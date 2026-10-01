@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { AstroCookies } from 'astro';
+import { getSecret } from 'astro:env/server';
 
 /**
  * Site-wide "not launched yet" gate.
@@ -16,8 +17,9 @@ import type { AstroCookies } from 'astro';
 export const GATE_COOKIE = 'chf_gate';
 const GATE_DAYS = 30;
 
+// Runtime lookup via astro:env; see the env schema in astro.config.mjs.
 function env(name: string): string | undefined {
-  return import.meta.env[name] || process.env[name];
+  return getSecret(name) || undefined;
 }
 
 export function gatePassword(): string | undefined {

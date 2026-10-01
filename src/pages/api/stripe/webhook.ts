@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { STRIPE_WEBHOOK_SECRET } from 'astro:env/server';
 import { getStripe } from '@/lib/stripe';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -11,11 +12,9 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response('Missing stripe-signature header', { status: 400 });
   }
 
-  // import.meta.env is inlined at build time, so a variable added in Netlify
-  // after the last build would be undefined here and every webhook would fail
-  // signature verification with a confusing 400. Same fallback as lib/stripe.ts.
-  const webhookSecret =
-    import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+  // Read at runtime via astro:env (see astro.config.mjs), so it is never baked
+  // into the build and a variable added in Netlify takes effect without a rebuild.
+  const webhookSecret = STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
     console.error('STRIPE_WEBHOOK_SECRET is not set — cannot verify webhooks.');
