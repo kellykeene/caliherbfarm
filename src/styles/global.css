@@ -67,3 +67,71 @@
     }
   }
 }
+
+/*
+ * The wash: what a band page shows when it has no photo. Leaf green and gold
+ * across the top, plum sweeping the lower right with a deeper one low left,
+ * warm earth through the middle, all on cream. Barn red stays out of it so the
+ * logo keeps being the only red at the top of the page.
+ */
+@utility bg-page-wash {
+  background-color: #f6f4ec;
+  background-image:
+    radial-gradient(58% 66% at 10% 18%, rgba(168, 213, 168, 0.55), transparent 70%),
+    radial-gradient(52% 58% at 88% 8%, rgba(232, 201, 106, 0.38), transparent 70%),
+    radial-gradient(64% 72% at 78% 92%, rgba(155, 107, 155, 0.42), transparent 72%),
+    radial-gradient(42% 50% at 4% 86%, rgba(107, 58, 107, 0.2), transparent 72%),
+    radial-gradient(46% 54% at 46% 42%, rgba(242, 235, 227, 0.95), transparent 76%);
+}
+
+/*
+ * Softening: behind a band's text, the photo is blurred and darkened in a
+ * soft oval that fades into the sharp photo with no edge, and the text gets a
+ * faint shadow. Stems and other busy detail stop crossing the letters while
+ * the rest of the photo keeps its brightness. See PhotoSoften.astro.
+ *
+ * --soften-strength (0–1, set per page in the admin) scales all three at
+ * once; each is written at full strength, so the default of 0.5 is half of
+ * it. --soften-at / --soften-size place the oval (lower left by default,
+ * where inside pages put their title); --soften-blur is the full-strength
+ * blur, shrunk for small previews.
+ */
+@utility photo-soften-blur {
+  backdrop-filter: blur(calc(var(--soften-blur, 16px) * var(--soften-strength, 0.5)));
+  mask-image: radial-gradient(
+    ellipse var(--soften-size, 55% 85%) at var(--soften-at, 18% 88%),
+    #000 30%,
+    transparent 78%
+  );
+}
+
+@utility photo-soften-shade {
+  background-image: radial-gradient(
+    ellipse var(--soften-size, 55% 85%) at var(--soften-at, 18% 88%),
+    color-mix(in srgb, var(--color-forest-900) 76%, transparent) 20%,
+    transparent 78%
+  );
+  opacity: var(--soften-strength, 0.5);
+}
+
+/* Inherited, so one class on the text block covers every line in it. */
+@utility photo-soften-text {
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / calc(0.7 * var(--soften-strength, 0.5))),
+    0 0 12px rgb(0 0 0 / calc(0.5 * var(--soften-strength, 0.5)));
+}
+
+/*
+ * The menu strip: darkening across the top of a band photo, solid behind the
+ * floating menu and fading out below it. Its opacity comes from
+ * menuStripOpacity() in src/lib/menu-strip.ts. --menu-solid / --menu-fade
+ * shrink it for small previews.
+ */
+@utility menu-strip {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-forest-900) 0,
+    var(--color-forest-900) var(--menu-solid, 60px),
+    transparent var(--menu-fade, 150px)
+  );
+}

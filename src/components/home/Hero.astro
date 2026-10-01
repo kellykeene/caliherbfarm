@@ -1,31 +1,82 @@
 ---
-import { SITE } from '@/lib/constants';
+import PhotoSoften from '@/components/global/PhotoSoften.astro';
+import { scrimFor, type ResolvedBackground } from '@/lib/backgrounds';
+import { menuStripOpacity } from '@/lib/menu-strip';
+
+/**
+ * Home's band: the farm photo runs to the top of the window with the header
+ * floating on it, and the logo sits on the photo like a sign at the gate.
+ * The header's own logo stays hidden until this scrolls away.
+ *
+ * The photo is set in the admin under Page backgrounds; with none, the hero
+ * falls back to the wash like any other band page.
+ */
+interface Props {
+  background: ResolvedBackground | null;
+}
+
+const { background } = Astro.props;
+const hasPhoto = background !== null;
+const scrim = scrimFor('home');
+// 0–1 for the CSS, or null when this page has softening off.
+const softenStrength = background && background.soften > 0 ? background.soften / 100 : null;
+const soften = softenStrength !== null;
+const menuStrip = background ? menuStripOpacity(background.menu) : 0;
 ---
 
 <section
   aria-labelledby="hero-heading"
-  class="relative bg-forest-700 text-white overflow-hidden"
+  data-page-band
+  data-band-style={hasPhoto ? 'photo' : 'wash'}
+  style={soften ? `--soften-strength: ${softenStrength}` : undefined}
+  class:list={[
+    // Home's text is centered, so its softened patch is too.
+    'relative -mt-28 md:-mt-32 overflow-hidden [--soften-at:50%_62%] [--soften-size:48%_62%]',
+    hasPhoto ? 'bg-forest-700 text-white' : 'bg-page-wash text-forest-900',
+  ]}
 >
-  <!-- Farm photo background -->
-  <img
-    src="/anise-hyssop-basket.jpeg"
-    alt="Anise hyssop harvested in a basket on the farm"
-    class="absolute inset-0 w-full h-full object-cover"
-    aria-hidden="true"
-  />
-  <!-- Dark overlay for text legibility -->
-  <div
-    class="absolute inset-0 bg-forest-900/40"
-    aria-hidden="true"
-  ></div>
+  {hasPhoto && (
+    <>
+      <img
+        src={background.src}
+        alt={background.alt}
+        aria-hidden={background.alt ? undefined : 'true'}
+        class="absolute inset-0 w-full h-full object-cover"
+        style={`object-position: ${background.focal}`}
+      />
+      <!-- Darkest at the top, where the menu sits over it. Strength is set per
+           page in the admin. -->
+      <div
+        class:list={['absolute inset-0', scrim.gradient]}
+        style={`opacity: ${background.tint / 100}`}
+        aria-hidden="true"
+      >
+      </div>
+      {menuStrip > 0 && (
+        <div
+          class="absolute inset-0 menu-strip"
+          style={`opacity: ${menuStrip}`}
+          aria-hidden="true"
+        >
+        </div>
+      )}
+      {soften && <PhotoSoften />}
+    </>
+  )}
 
-  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:pt-6 lg:pb-40 text-center">
+  <div
+    class:list={[
+      'relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 sm:pt-36 sm:pb-28 lg:pt-36 lg:pb-40 text-center',
+      soften && 'photo-soften-text',
+    ]}
+  >
     <img
+      id="hero-logo"
       src="/cali-herb-farm-logo.png"
       alt="Cali Herb Farm"
       width="2061"
       height="786"
-      class="hidden lg:block h-44 w-auto mx-auto mb-6 drop-shadow-xl"
+      class="w-full max-w-xs sm:max-w-sm lg:max-w-none lg:h-44 lg:w-auto h-auto mx-auto mb-6 drop-shadow-xl"
     />
     <h1
       id="hero-heading"
@@ -33,8 +84,16 @@ import { SITE } from '@/lib/constants';
     >
       Hand harvested medicinal herbs, grown organically in Northern California
     </h1>
-    <p class="mt-6 text-lg sm:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-      We cultivate 50+ varieties of medicinal herbs right here on our farm, using regenerative and organic methods with no shortcuts. Whole-plant herbs, live herb starts, dried bulk herbs, and tea blends hand-harvested daily and naturally air-dried in small batches for maximum freshness and quality.
+    <p
+      class:list={[
+        'mt-6 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed',
+        hasPhoto ? 'text-white/90' : 'text-earth-500',
+      ]}
+    >
+      We cultivate 50+ varieties of medicinal herbs right here on our farm, using
+      regenerative and organic methods with no shortcuts. Whole-plant herbs, live
+      herb starts, dried bulk herbs, and tea blends hand-harvested daily and
+      naturally air-dried in small batches for maximum freshness and quality.
     </p>
   </div>
 </section>

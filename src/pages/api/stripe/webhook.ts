@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { STRIPE_WEBHOOK_SECRET } from 'astro:env/server';
 import { getStripe } from '@/lib/stripe';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -11,13 +12,18 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response('Missing stripe-signature header', { status: 400 });
   }
 
+  // Read at runtime via astro:env (see astro.config.mjs), so it is never baked
+  // into the build and a variable added in Netlify takes effect without a rebuild.
+  const webhookSecret = STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set — cannot verify webhooks.');
+    return new Response('Webhook secret not configured', { status: 500 });
+  }
+
   try {
     const stripe = getStripe();
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      import.meta.env.STRIPE_WEBHOOK_SECRET,
-    );
+    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
     switch (event.type) {
       case 'checkout.session.completed': {

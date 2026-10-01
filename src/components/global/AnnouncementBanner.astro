@@ -12,14 +12,14 @@
   role="region"
   aria-label="Announcement"
   hidden
-  class="bg-white text-forest-900 text-center text-sm px-4 py-3 relative"
+  class="bg-plum-600 text-cream text-center text-sm px-4 py-3 relative"
 >
   <p id="announcement-message" class="max-w-4xl mx-auto pr-8"></p>
   <button
     type="button"
     id="dismiss-banner"
     aria-label="Dismiss announcement"
-    class="absolute right-3 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-forest-900/60 hover:text-forest-900 transition-colors"
+    class="absolute right-3 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] flex items-center justify-center text-cream/70 hover:text-cream transition-colors"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -48,7 +48,7 @@
     const dismiss = document.getElementById('dismiss-banner');
     if (!banner || !messageEl || !dismiss) return;
 
-    let data: { message?: string; enabled?: boolean };
+    let data: { message?: string; enabled?: boolean; updatedAt?: string | null };
     try {
       const res = await fetch('/api/announcement', { cache: 'no-store' });
       if (!res.ok) return;
@@ -61,16 +61,18 @@
     const message = (data.message ?? '').trim();
     if (!data.enabled || !message) return;
 
-    // Dismissal is keyed to the message itself, so a NEW announcement shows up
-    // again for someone who dismissed the previous one.
-    if (localStorage.getItem(DISMISS_KEY) === message) return;
+    // Dismissal is keyed to this particular save of the message, so a new
+    // announcement, or saving it again in the admin (e.g. turning it back on),
+    // shows it again for someone who dismissed it.
+    const dismissId = `${data.updatedAt ?? ''}|${message}`;
+    if (localStorage.getItem(DISMISS_KEY) === dismissId) return;
 
     messageEl.textContent = message;
     banner.hidden = false;
 
     dismiss.addEventListener('click', () => {
       banner.hidden = true;
-      localStorage.setItem(DISMISS_KEY, message);
+      localStorage.setItem(DISMISS_KEY, dismissId);
     });
   }
 

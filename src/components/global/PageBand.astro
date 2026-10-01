@@ -1,0 +1,103 @@
+---
+import PhotoSoften from '@/components/global/PhotoSoften.astro';
+import { scrimFor, type ResolvedBackground } from '@/lib/backgrounds';
+import { menuStripOpacity } from '@/lib/menu-strip';
+
+/**
+ * The top of an inside page: the page's title over its background photo, with
+ * the header floating on top of it (see Header.astro's overlay styles).
+ *
+ * Pages with no photo — none uploaded and no default in the repo — get the
+ * wash instead, a soft gradient in the farm palette. That is a designed
+ * fallback, not a placeholder, so a page without a photo still looks finished.
+ */
+interface Props {
+  background: ResolvedBackground | null;
+  kicker?: string;
+  title: string;
+  intro?: string;
+}
+
+const { background, kicker, title, intro } = Astro.props;
+const hasPhoto = background !== null;
+const scrim = scrimFor('band');
+// 0–1 for the CSS, or null when this page has softening off.
+const softenStrength = background && background.soften > 0 ? background.soften / 100 : null;
+const soften = softenStrength !== null;
+const menuStrip = background ? menuStripOpacity(background.menu) : 0;
+---
+
+<section
+  data-page-band
+  data-band-style={hasPhoto ? 'photo' : 'wash'}
+  style={soften ? `--soften-strength: ${softenStrength}` : undefined}
+  class:list={[
+    // Pulled up under the sticky header, which is transparent here, then
+    // padded back down so the title clears it.
+    'relative -mt-28 md:-mt-32 pt-36 md:pt-44 pb-10 md:pb-14',
+    // Phones run the intro the full width, so the softened patch widens to
+    // cover it; from md up it stays the lower-left oval.
+    'max-md:[--soften-at:30%_82%] max-md:[--soften-size:100%_70%]',
+    hasPhoto ? 'text-white' : 'bg-page-wash text-forest-900',
+  ]}
+>
+  {hasPhoto && (
+    <>
+      <img
+        src={background.src}
+        alt={background.alt}
+        aria-hidden={background.alt ? undefined : 'true'}
+        class="absolute inset-0 w-full h-full object-cover"
+        style={`object-position: ${background.focal}`}
+      />
+      <!-- Darkest at the top, where the menu sits, and again under the title.
+           Strength is set per page in the admin. -->
+      <div
+        class:list={['absolute inset-0', scrim.gradient]}
+        style={`opacity: ${background.tint / 100}`}
+        aria-hidden="true"
+      >
+      </div>
+      {menuStrip > 0 && (
+        <div
+          class="absolute inset-0 menu-strip"
+          style={`opacity: ${menuStrip}`}
+          aria-hidden="true"
+        >
+        </div>
+      )}
+      {soften && <PhotoSoften />}
+    </>
+  )}
+
+  <div
+    class:list={[
+      'relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+      soften && 'photo-soften-text',
+    ]}
+  >
+    {kicker && (
+      <p
+        class:list={[
+          'text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] mb-3',
+          hasPhoto ? 'text-white/85' : 'text-sage-600',
+        ]}
+      >
+        {kicker}
+      </p>
+    )}
+    <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+      {title}
+    </h1>
+    {intro && (
+      <p
+        class:list={[
+          'mt-4 text-lg max-w-2xl leading-relaxed',
+          hasPhoto ? 'text-white/90' : 'text-earth-500',
+        ]}
+      >
+        {intro}
+      </p>
+    )}
+  </div>
+</section>

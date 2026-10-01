@@ -10,24 +10,20 @@ import { SITE, CONTACT_MESSAGE_MAX } from '@/lib/constants';
 <BaseLayout
   title="Contact"
   description="Get in touch with Cali Herb Farm — questions about orders, wholesale, or the herbs we grow."
+  pageId="contact"
+  band={{
+    title: 'Contact',
+    intro:
+      'Questions about an order, wholesale, or something growing in the field? Send a note and we will get back to you.',
+  }}
 >
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumbs items={[{ label: 'Contact', href: '/contact' }]} />
   </div>
 
-  <section
-    aria-labelledby="contact-heading"
-    class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20"
-  >
-    <h1
-      id="contact-heading"
-      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-4"
-    >
-      Contact
-    </h1>
+  <section aria-label="Contact form" class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
     <p class="text-lg text-earth-500 mb-10">
-      Questions about an order, wholesale, or something growing in the field?
-      Send a note and we will get back to you. You can also reach us directly at
+      You can also reach us directly at
       <a
         href={`mailto:${SITE.email}`}
         class="text-forest-700 underline underline-offset-2 hover:text-forest-900"

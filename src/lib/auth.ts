@@ -5,12 +5,14 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import type { APIContext, AstroCookies } from 'astro';
+import { getSecret } from 'astro:env/server';
 
 export const SESSION_COOKIE = 'chf_admin';
 const SESSION_HOURS = 12;
 
+// Runtime lookup via astro:env; see the env schema in astro.config.mjs.
 function env(name: string): string | undefined {
-  return import.meta.env[name] || process.env[name];
+  return getSecret(name) || undefined;
 }
 
 /* ------------------------------------------------------------------ *

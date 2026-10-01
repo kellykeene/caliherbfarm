@@ -276,7 +276,7 @@ export function buildNavLinks(categories: Category[]): NavLink[] {
         { label: 'Shop All', href: '/shop' },
       ],
     },
-    { label: 'Harvest Calendar', href: '/fresh-herbs' },
+    { label: 'Harvest Calendar', href: '/harvest-calendar' },
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];

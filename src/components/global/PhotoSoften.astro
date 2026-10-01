@@ -1,0 +1,20 @@
+---
+/**
+ * The blurred, lightly darkened patch behind a band's text (utilities in
+ * global.css). Goes after the photo and scrim and before the text, so the
+ * blur picks up both. The text itself takes `photo-soften-text`.
+ *
+ * Placement comes from --soften-at / --soften-size on an ancestor; left
+ * unset, it sits lower left for the inside pages' titles.
+ */
+interface Props {
+  hidden?: boolean;
+}
+
+const { hidden = false } = Astro.props;
+---
+
+<div data-soften class="absolute inset-0 pointer-events-none" aria-hidden="true" hidden={hidden}>
+  <div class="absolute inset-0 photo-soften-blur"></div>
+  <div class="absolute inset-0 photo-soften-shade"></div>
+</div>

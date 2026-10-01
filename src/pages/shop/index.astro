@@ -34,24 +34,19 @@ const populated = categories.filter((cat) =>
   title="Shop"
   description="Shop whole dried herbs, tea blends, fresh herbs, and face & body care grown and made on our small California herb farm."
   schema={itemListSchema}
+  pageId="shop"
+  band={{
+    title: 'Shop',
+    intro: 'Everything we grow, dry, blend, and make — in one place.',
+  }}
 >
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <Breadcrumbs items={[{ label: 'Shop', href: '/shop' }]} />
   </div>
 
-  <section aria-labelledby="shop-heading" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1
-      id="shop-heading"
-      class="font-display text-4xl sm:text-5xl font-bold text-forest-900 mb-3"
-    >
-      Shop
-    </h1>
-    <p class="text-lg text-earth-500 max-w-2xl mb-8">
-      Everything we grow, dry, blend, and make &mdash; in one place.
-    </p>
-
+  <nav aria-label="Categories" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-2">
     <CategoryNav />
-  </section>
+  </nav>
 
   {populated.map((cat, i) => (
     <CategorySection

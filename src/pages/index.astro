@@ -5,17 +5,24 @@ import CategorySection from '@/components/shop/CategorySection.astro';
 import NewsletterSignup from '@/components/global/NewsletterSignup.astro';
 import InstagramFeed from '@/components/home/InstagramFeed.astro';
 import { getHomeCategories, getStorefrontCatalog } from '@/lib/catalog';
+import { getBackground } from '@/lib/backgrounds';
 import { getWebSiteSchema } from '@/lib/schema';
 
 // Which categories appear here, and in what order, is set in the admin.
-const [homeCategories, catalog] = await Promise.all([
+const [homeCategories, catalog, heroBackground] = await Promise.all([
   getHomeCategories(),
   getStorefrontCatalog(),
+  getBackground('home'),
 ]);
 ---
 
-<BaseLayout title="Home" schema={getWebSiteSchema()}>
-  <Hero />
+<BaseLayout
+  title="Home"
+  schema={getWebSiteSchema()}
+  heroBand={heroBackground ? 'photo' : 'wash'}
+  heroLogo
+>
+  <Hero background={heroBackground} />
 
   {homeCategories.map((category, i) => (
     <CategorySection

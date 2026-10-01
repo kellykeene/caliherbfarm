@@ -1,10 +1,11 @@
 import Stripe from 'stripe';
+import { STRIPE_SECRET_KEY } from 'astro:env/server';
 
 let _stripe: Stripe | null = null;
 
 export function getStripe(): Stripe {
   if (!_stripe) {
-    const key = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+    const key = STRIPE_SECRET_KEY;
     if (!key) {
       throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
     }
@@ -14,9 +15,7 @@ export function getStripe(): Stripe {
 }
 
 export function isStripeConfigured(): boolean {
-  return Boolean(
-    import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY,
-  );
+  return Boolean(STRIPE_SECRET_KEY);
 }
 
 export interface RecurringSpec {
