@@ -51,13 +51,13 @@ src/
   components/      # UI by area: global, home, product, shop, herbs, seo
   content/products # one Markdown file per product
   layouts/         # BaseLayout (storefront) and AdminLayout
-  lib/             # catalog, store (Blobs), stripe, cart, auth, gate, media, schema
+  lib/             # catalog, store (Blobs), stripe, cart, auth, noindex, media, schema
   pages/
     admin/         # password-protected product, category, announcement editors
-    api/           # admin, stripe (checkout + webhook), newsletter, gate
+    api/           # admin, stripe (checkout + webhook), newsletter
     media/         # serves uploaded product images out of Blobs
     shop/          # index, category pages, product detail
-  middleware.ts    # pre-launch password gate + noindex header
+  middleware.ts    # pre-launch noindex header
 scripts/
   hash-password.mjs  # generates the admin password hash and session secret
 ```
@@ -98,7 +98,6 @@ The essentials:
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — checkout and webhooks
 - `SITE_URL` — used for Stripe success/cancel redirects
 - `ADMIN_PASSWORD_HASH`, `ADMIN_SESSION_SECRET` — generate both with `node scripts/hash-password.mjs`
-- `SITE_PASSWORD` — optional pre-launch gate over the whole storefront; removing it is the launch switch
 - `SITE_NOINDEX` — set to `true` before launch to send `X-Robots-Tag: noindex`; **delete it at launch**
 - `INSTAGRAM_TOKEN`, `NEWSLETTER_API_KEY` — optional integrations
 
