@@ -18,7 +18,6 @@ export default defineConfig({
       STRIPE_WEBHOOK_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),
       ADMIN_PASSWORD_HASH: envField.string({ context: 'server', access: 'secret', optional: true }),
       ADMIN_SESSION_SECRET: envField.string({ context: 'server', access: 'secret', optional: true }),
-      SITE_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
       SITE_NOINDEX: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
