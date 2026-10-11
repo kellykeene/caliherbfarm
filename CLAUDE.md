@@ -10,7 +10,7 @@
 
 - The site uses Astro's ClientRouter (view transitions), which swaps the DOM on navigation without re-running module scripts.
 - Scripts that bind to page elements (hamburger menu, scroll-reveal logo, etc.) must set up on the `astro:page-load` event, not just once on first load.
-- Delegated listeners on `document` are the exception. `document` persists across navigations, so bind them once at module level and look up elements at event time. Re-binding them on each page load would stack duplicates (see `QuickViewModal.astro`).
+- Delegated listeners on `document` are the exception. `document` persists across navigations, so bind them once at module level and look up elements at event time. Re-binding them on each page load would stack duplicates.
 
 ## Admin Settings
 

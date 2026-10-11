@@ -5,7 +5,6 @@ import AnnouncementBanner from '@/components/global/AnnouncementBanner.astro';
 import Header from '@/components/global/Header.astro';
 import PageBand from '@/components/global/PageBand.astro';
 import Footer from '@/components/global/Footer.astro';
-import QuickViewModal from '@/components/product/QuickViewModal.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { SITE } from '@/lib/constants';
 import { getOrganizationSchema } from '@/lib/schema';
@@ -114,7 +113,6 @@ const canonicalUrl = new URL(Astro.url.pathname, SITE.url);
       <slot />
     </main>
     <Footer />
-    <QuickViewModal />
 
     <!-- Initialize cart count on every page -->
     <script>
